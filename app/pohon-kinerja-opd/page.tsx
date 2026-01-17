@@ -4,12 +4,13 @@ import { useEffect, useState } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import apiClient from '../lib/axios';
 import './treeflex.css';
-import PohonNode from '@/components/PohonNode';
+//import PohonNodeOpd from '@/components/PohonNodeOpd';
 import { PohonKinerja, TematikItem } from '@/app/pohon-kinerja/types';
 
 // Import komponen layout
 import Sidebar from "@/components/layout/Sidebar"; 
 import PageHeader from "@/components/layout/PageHeader"; 
+import PohonNodeOpd from '@/components/PohonNodeOpd';
 
 const PohonKinerjaPage = () => {
     // Hooks untuk URL Params
@@ -164,7 +165,7 @@ const PohonKinerjaPage = () => {
                         {!loading && !error && treeData && (
                             <div className="tf-tree tf-gap-lg flex justify-center items-start min-w-max mx-auto py-10">
                                 <ul>
-                                    <PohonNode node={treeData} />
+                                    <PohonNodeOpd node={treeData} />
                                 </ul>
                             </div>
                         )}

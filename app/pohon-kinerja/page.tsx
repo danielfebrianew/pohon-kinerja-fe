@@ -116,7 +116,7 @@ const PohonKinerjaPage = () => {
                     <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6 mb-6">
                         <div className="flex flex-col items-center justify-center gap-3">
                             <h1 className="text-xl font-bold text-gray-800">
-                                Visualisasi Pohon Kinerja
+                                Visualisasi Pohon Kinerja Pemda
                             </h1>
                             <div className="flex flex-col sm:flex-row items-center gap-3 w-full max-w-md">
                                 <label className="text-sm font-semibold text-gray-600 whitespace-nowrap">

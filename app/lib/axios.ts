@@ -2,7 +2,7 @@
 import axios from 'axios';
 
 // Ganti URL ini sesuai dengan backend Springboot kamu
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8181/kertas-kerja/api/v2';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api-kertas-kerja.zeabur.app/kertas-kerja/api/v2';
 
 const apiClient = axios.create({
   baseURL: API_URL,

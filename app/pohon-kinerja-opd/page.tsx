@@ -2,28 +2,21 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import apiClient from '../lib/axios';
 import './treeflex.css';
-import PohonNode from '@/components/PohonNode';
+//import PohonNodeOpd from '@/components/PohonNodeOpd';
 import { PohonKinerja, TematikItem } from '@/app/pohon-kinerja/types';
 
 // Import komponen layout
 import Sidebar from "@/components/layout/Sidebar"; 
 import PageHeader from "@/components/layout/PageHeader"; 
-
-// Import komponen layout
-import Sidebar from "@/components/layout/Sidebar"; 
-import PageHeader from "@/components/layout/PageHeader"; 
+import PohonNodeOpd from '@/components/PohonNodeOpd';
 
 const PohonKinerjaPage = () => {
     // Hooks untuk URL Params
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
-
-    // State untuk Layout
-    const [sidebarOpen, setSidebarOpen] = useState(true);
 
     // State untuk Layout
     const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -124,7 +117,7 @@ const PohonKinerjaPage = () => {
                     <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6 mb-6">
                         <div className="flex flex-col items-center justify-center gap-3">
                             <h1 className="text-xl font-bold text-gray-800">
-                                Visualisasi Pohon Kinerja
+                                Visualisasi Pohon Kinerja OPD
                             </h1>
                             <div className="flex flex-col sm:flex-row items-center gap-3 w-full max-w-md">
                                 <label className="text-sm font-semibold text-gray-600 whitespace-nowrap">
@@ -162,17 +155,7 @@ const PohonKinerjaPage = () => {
                                 {error}
                             </div>
                         )}
-                        {error && (
-                            <div className="flex items-center justify-center h-64 text-red-500 font-medium text-center">
-                                {error}
-                            </div>
-                        )}
 
-                        {!loading && !error && !selectedId && (
-                            <div className="flex items-center justify-center h-64 text-blue-400 italic text-center">
-                                Silakan pilih tematik di atas untuk melihat pohon kinerja.
-                            </div>
-                        )}
                         {!loading && !error && !selectedId && (
                             <div className="flex items-center justify-center h-64 text-blue-400 italic text-center">
                                 Silakan pilih tematik di atas untuk melihat pohon kinerja.
@@ -182,16 +165,7 @@ const PohonKinerjaPage = () => {
                         {!loading && !error && treeData && (
                             <div className="tf-tree tf-gap-lg flex justify-center items-start min-w-max mx-auto py-10">
                                 <ul>
-                                    <PohonNode node={treeData} />
-                                </ul>
-                            </div>
-                        )}
-                    </div>
-                </main>
-                        {!loading && !error && treeData && (
-                            <div className="tf-tree tf-gap-lg flex justify-center items-start min-w-max mx-auto py-10">
-                                <ul>
-                                    <PohonNode node={treeData} />
+                                    <PohonNodeOpd node={treeData} />
                                 </ul>
                             </div>
                         )}

@@ -2,15 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import apiClient from '../lib/axios';
+import apiClient from '@/app/lib/axios'; // Adjusted path if needed
 import './treeflex.css';
 import PohonNode from '@/components/PohonNode';
 import { PohonKinerja, TematikItem } from '@/app/pohon-kinerja/types';
-
-// Import komponen layout
-import Sidebar from "@/components/layout/Sidebar"; 
-import PageHeader from "@/components/layout/PageHeader"; 
 
 // Import komponen layout
 import Sidebar from "@/components/layout/Sidebar"; 
@@ -21,9 +16,6 @@ const PohonKinerjaPage = () => {
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
-
-    // State untuk Layout
-    const [sidebarOpen, setSidebarOpen] = useState(true);
 
     // State untuk Layout
     const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -50,7 +42,7 @@ const PohonKinerjaPage = () => {
 
     const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const newId = e.target.value;
-        const params = new URLSearchParams(searchParams);
+        const params = new URLSearchParams(searchParams.toString()); // Fix: toString() needed
 
         if (newId) {
             params.set('pohon_id', newId);
@@ -103,7 +95,7 @@ const PohonKinerjaPage = () => {
     }, [selectedId]); 
 
     return (
-        // Container Utama (Sama dengan Home/Dashboard)
+        // Container Utama
         <div className="flex h-screen w-full bg-gray-100 overflow-hidden font-sans text-gray-800">
             
             {/* 1. SIDEBAR */}
@@ -148,6 +140,8 @@ const PohonKinerjaPage = () => {
 
                     {/* Area Visualisasi Tree */}
                     <div className="w-full bg-white rounded-xl shadow-md border border-gray-200 p-4 min-h-[500px] overflow-x-auto">
+                        
+                        {/* Loading State */}
                         {loading && (
                             <div className="flex items-center justify-center h-64 text-gray-500 animate-pulse">
                                 <div className="flex flex-col items-center gap-2">
@@ -157,37 +151,21 @@ const PohonKinerjaPage = () => {
                             </div>
                         )}
 
-                        {error && (
-                            <div className="flex items-center justify-center h-64 text-red-500 font-medium text-center">
-                                {error}
-                            </div>
-                        )}
+                        {/* Error State */}
                         {error && (
                             <div className="flex items-center justify-center h-64 text-red-500 font-medium text-center">
                                 {error}
                             </div>
                         )}
 
-                        {!loading && !error && !selectedId && (
-                            <div className="flex items-center justify-center h-64 text-blue-400 italic text-center">
-                                Silakan pilih tematik di atas untuk melihat pohon kinerja.
-                            </div>
-                        )}
+                        {/* Empty State (No Selection) */}
                         {!loading && !error && !selectedId && (
                             <div className="flex items-center justify-center h-64 text-blue-400 italic text-center">
                                 Silakan pilih tematik di atas untuk melihat pohon kinerja.
                             </div>
                         )}
 
-                        {!loading && !error && treeData && (
-                            <div className="tf-tree tf-gap-lg flex justify-center items-start min-w-max mx-auto py-10">
-                                <ul>
-                                    <PohonNode node={treeData} />
-                                </ul>
-                            </div>
-                        )}
-                    </div>
-                </main>
+                        {/* Data Visualization */}
                         {!loading && !error && treeData && (
                             <div className="tf-tree tf-gap-lg flex justify-center items-start min-w-max mx-auto py-10">
                                 <ul>

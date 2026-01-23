@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { ButtonGreen } from '@/src/components/common/button/Button';
-import apiClient from '@/src/lib/axios';
+import { fetchApi } from '@/src/lib/fetcher';
 
 interface ModalAddChildProps {
     isOpen: boolean;
@@ -85,56 +85,60 @@ export const ModalAddChild: React.FC<ModalAddChildProps> = ({ isOpen, onClose, o
 
     // --- SUBMIT ---
     const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsLoading(true);
+  e.preventDefault();
+  setIsLoading(true);
 
-        // Mapping state indikator ke format Payload yang diinginkan
-        // Pastikan konversi tipe data (misal string ke number untuk nilai)
-        const formattedIndikators = indikators.map(ind => ({
-            indikator: ind.indikator,
-            keterangan: ind.keterangan,
-            tahun: tahun,
-            targets: ind.targets.map(tgt => ({
-                nilai: Number(tgt.nilai), // Convert ke number
-                satuan: tgt.satuan,
-                tahun: tahun
-            }))
-        }));
+  const formattedIndikators = indikators.map(ind => ({
+    indikator: ind.indikator,
+    keterangan: ind.keterangan,
+    tahun: tahun,
+    targets: ind.targets.map(tgt => ({
+      nilai: Number(tgt.nilai),
+      satuan: tgt.satuan,
+      tahun: tahun
+    }))
+  }));
 
-        const payload = {
-            parentId: parentId,
-            namaPohon: namaPohon,
-            keterangan: keterangan,
-            tahun: tahun,
-            jenisPohon: childInfo.nextJenis,
-            levelPohon: childInfo.nextLevel,
-            kodeOpd: "",
-            kodePemda: "",
-            status: "DRAFT",
-            indikators: formattedIndikators
-        };
+  const payload = {
+    parentId,
+    namaPohon,
+    keterangan,
+    tahun,
+    jenisPohon: childInfo.nextJenis,
+    levelPohon: childInfo.nextLevel,
+    kodeOpd: "",
+    kodePemda: "",
+    status: "DRAFT",
+    indikators: formattedIndikators
+  };
 
-        try {
-            // URL sudah sesuai base_url apiClient
-            const response = await apiClient.post(`/pohon-kinerja`, payload);
+  try {
+    const res = await fetchApi({
+      type: "auth",
+      url: "/pohon-kinerja",
+      method: "POST",
+      body: payload
+    });
 
-            if (response.data.success || response.status === 200 || response.status === 201) {
-                alert("Berhasil menambahkan " + childInfo.label);
-                onSuccess();
-                onClose();
-                // Reset Form
-                setNamaPohon("");
-                setKeterangan("");
-                setIndikators([{ indikator: "", keterangan: "", targets: [{ nilai: "", satuan: "" }] }]);
-            }
-        } catch (error: any) {
-            console.error("Gagal create pohon:", error);
-            const errMsg = error?.response?.data?.message || "Gagal menyimpan data.";
-            alert(errMsg);
-        } finally {
-            setIsLoading(false);
-        }
-    };
+    if (res?.status === 200 || res?.status === 201 || res?.data?.success) {
+      alert("Berhasil menambahkan " + childInfo.label);
+      onSuccess();
+      onClose();
+      setNamaPohon("");
+      setKeterangan("");
+      setIndikators([{ indikator: "", keterangan: "", targets: [{ nilai: "", satuan: "" }] }]);
+    } else {
+      alert(res?.data?.message || "Gagal menyimpan data.");
+    }
+
+  } catch (err) {
+    console.error("Gagal create pohon:", err);
+    alert("Terjadi kesalahan jaringan.");
+  } finally {
+    setIsLoading(false);
+  }
+};
+
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm p-4 overflow-y-auto">

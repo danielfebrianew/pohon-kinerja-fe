@@ -2,15 +2,15 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import apiClient from '../../lib/axios';
+import { fetchApi } from '@/src/lib/fetcher';
 import './treeflex.css';
-//import PohonNodeOpd from '@/components/PohonNodeOpd';
+import PohonNodeOpd from '@/src/components/PohonNodeOpd';
 import { PohonKinerja, TematikItem } from '@/src/app/pohon-kinerja/types';
 
 // Import komponen layout
 import Sidebar from "@/src/components/global/sidebar/Sidebar"; 
 import PageHeader from "@/src/components/global/header/Header"; 
-import PohonNodeOpd from '@/src/components/PohonNodeOpd';
+import Breadcrumb from '@/src/components/global/breadcrumb/Breadcrumb';
 
 const PohonKinerjaPage = () => {
     // Hooks untuk URL Params
@@ -43,7 +43,7 @@ const PohonKinerjaPage = () => {
 
     const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const newId = e.target.value;
-        const params = new URLSearchParams(searchParams);
+        const params = new URLSearchParams(searchParams.toString()); // Fix: toString() needed
 
         if (newId) {
             params.set('pohon_id', newId);
@@ -58,10 +58,15 @@ const PohonKinerjaPage = () => {
     useEffect(() => {
         const fetchTematikList = async () => {
             try {
-                const response = await apiClient.get('/pohon-kinerja/tematik');
-                if (response.data.success) {
-                    setListTematik(response.data.data);
-                }
+                const res = await fetchApi({
+                    type: "withoutAuth",
+                    url: "/pohon-kinerja/tematik",
+                    method: "GET"
+                    });
+
+                    if (res?.data?.success) {
+                    setListTematik(res.data.data);
+                    }
             } catch (err) {
                 console.error("Gagal load list tematik", err);
                 setError("Gagal memuat daftar pohon.");
@@ -78,12 +83,18 @@ const PohonKinerjaPage = () => {
             setError(null);
             
             try {
-                const response = await apiClient.get(`/pohon-kinerja/${selectedId}`);
-                if (response.data.success) {
-                    setTreeData(response.data.data);
+                const res = await fetchApi({
+                type: "withoutAuth",
+                url: `/pohon-kinerja/${selectedId}`,
+                method: "GET"
+                });
+
+                if (res?.data?.success) {
+                setTreeData(res.data.data);
                 } else {
-                    setError(response.data.message);
+                setError(res?.data?.message || "Gagal memuat data");
                 }
+ 
             } catch (err) {
                 console.error("Gagal load tree detail", err);
                 setError("Gagal memuat visualisasi pohon.");
@@ -96,7 +107,7 @@ const PohonKinerjaPage = () => {
     }, [selectedId]); 
 
     return (
-        // Container Utama (Sama dengan Home/Dashboard)
+        // Container Utama
         <div className="flex h-screen w-full bg-gray-100 overflow-hidden font-sans text-gray-800">
             
             {/* 1. SIDEBAR */}
@@ -109,15 +120,15 @@ const PohonKinerjaPage = () => {
                 <header className="p-4">
                     <PageHeader />
                 </header>
-
+                
                 {/* Main Content Area */}
                 <main className="flex-1 overflow-y-auto p-4 md:p-6">
-                    
+                    <Breadcrumb />
                     {/* Kotak Kontrol/Dropdown */}
                     <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6 mb-6">
                         <div className="flex flex-col items-center justify-center gap-3">
                             <h1 className="text-xl font-bold text-gray-800">
-                                Visualisasi Pohon Kinerja OPD
+                                Visualisasi Pohon Kinerja Pemda
                             </h1>
                             <div className="flex flex-col sm:flex-row items-center gap-3 w-full max-w-md">
                                 <label className="text-sm font-semibold text-gray-600 whitespace-nowrap">
@@ -141,6 +152,8 @@ const PohonKinerjaPage = () => {
 
                     {/* Area Visualisasi Tree */}
                     <div className="w-full bg-white rounded-xl shadow-md border border-gray-200 p-4 min-h-[500px] overflow-x-auto">
+                        
+                        {/* Loading State */}
                         {loading && (
                             <div className="flex items-center justify-center h-64 text-gray-500 animate-pulse">
                                 <div className="flex flex-col items-center gap-2">
@@ -150,18 +163,21 @@ const PohonKinerjaPage = () => {
                             </div>
                         )}
 
+                        {/* Error State */}
                         {error && (
                             <div className="flex items-center justify-center h-64 text-red-500 font-medium text-center">
                                 {error}
                             </div>
                         )}
 
+                        {/* Empty State (No Selection) */}
                         {!loading && !error && !selectedId && (
                             <div className="flex items-center justify-center h-64 text-blue-400 italic text-center">
                                 Silakan pilih tematik di atas untuk melihat pohon kinerja.
                             </div>
                         )}
 
+                        {/* Data Visualization */}
                         {!loading && !error && treeData && (
                             <div className="tf-tree tf-gap-lg flex justify-center items-start min-w-max mx-auto py-10">
                                 <ul>

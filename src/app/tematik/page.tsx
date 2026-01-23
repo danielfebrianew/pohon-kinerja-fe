@@ -4,11 +4,11 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Sidebar from "@/src/components/global/sidebar/Sidebar";
-import PageHeader from "@/src/components/global/header/Header";
-// import apiClient from '@/lib/axios'; 
+import Header from "@/src/components/global/header/Header";
 import { TematikData } from './types';
 import { Plus, Pencil, Trash2, Home } from 'lucide-react';
 import ModalAddTematik from './_components/ModalAddTematik'; // Import Modal
+import Breadcrumb from '@/src/components/global/breadcrumb/Breadcrumb';
 
 const TematikPage = () => {
     const router = useRouter();
@@ -77,21 +77,11 @@ const TematikPage = () => {
 
             <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
                 <header className="p-4 bg-white shadow-sm z-10">
-                    <PageHeader />
+                    <Header />
                 </header>
 
                 <main className="flex-1 overflow-y-auto p-6 relative">
-                    {/* Breadcrumb */}
-                    <div className="text-sm text-gray-500 mb-4 flex items-center gap-2">
-                        <Link href="/" className="hover:text-blue-500 transition-colors">
-                            <Home size={16} />
-                        </Link>
-                        <span>/</span>
-                        <span>Perencanaan Pemda</span>
-                        <span>/</span>
-                        <span className="font-semibold text-gray-700">Tematik Pemda</span>
-                    </div>
-
+                    <Breadcrumb />
                     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 min-h-[80vh]">
                         {/* Header Content */}
                         <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">

@@ -7,6 +7,7 @@ import ContentContainer from '../../components/global/contentContainer';
 // 2. Import komponen layout
 import Sidebar from "@/src/components/global/sidebar/Sidebar";
 import PageHeader from "@/src/components/global/header/Header";
+import Breadcrumb from '@/src/components/global/breadcrumb/Breadcrumb';
 
 const DashboardPage = () => {
   // State untuk Sidebar (Sama seperti di PohonKinerja)
@@ -29,7 +30,7 @@ const DashboardPage = () => {
 
         {/* Main Content Area (Scrollable) */}
         <main className="flex-1 overflow-y-auto p-4 md:p-6">
-          
+          <Breadcrumb />
           {/* Konten Asli Dashboard Kamu */}
           <ContentContainer>
             <div className="pb-4">

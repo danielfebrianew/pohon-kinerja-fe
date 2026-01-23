@@ -4,7 +4,7 @@ import { PohonKinerja, Indikator } from "@/src/app/pohon-kinerja/types";
 import { getChildInfo, getPohonStyle } from "@/src/app/pohon-kinerja/utils";
 import { ModalAddChild } from "@/src/app/pohon-kinerja/_components/ModalAddChild";
 import { ModalEditNode } from "@/src/app/pohon-kinerja/_components/ModalEditNode";
-import apiClient from "@/src/lib/axios";
+import { fetchApi } from "@/src/lib/fetcher";
 import { TbEye, TbEyeOff } from "react-icons/tb";
 
 interface PohonNodeOpdProps {
@@ -82,21 +82,31 @@ const PohonNodeOpd: React.FC<PohonNodeOpdProps> = ({ node, onTreeRefresh, forceE
     }
   };
 
-  const handleDelete = async () => {
-    const confirmMsg = `Apakah Anda yakin ingin menghapus "${node.namaPohon}"? \n\nData yang dihapus tidak dapat dikembalikan.`;
-    if (!window.confirm(confirmMsg)) return;
+const handleDelete = async () => {
+  const confirmMsg = `Apakah Anda yakin ingin menghapus "${node.namaPohon}"?\n\nData yang dihapus tidak dapat dikembalikan.`;
+  if (!window.confirm(confirmMsg)) return;
 
-    try {
-      await apiClient.delete(`/pohon-kinerja/${node.id}`);
+  try {
+    const res = await fetchApi({
+      type: "auth",
+      url: `/pohon-kinerja/${node.id}`,
+      method: "DELETE"
+    });
+
+    if (res?.status === 200 || res?.status === 204 || res?.data?.success) {
       alert("Berhasil menghapus data.");
       if (onTreeRefresh) onTreeRefresh();
       else window.location.reload();
-    } catch (error: any) {
-      console.error("Gagal menghapus:", error);
-      const msg = error?.response?.data?.message || "Gagal menghapus data.";
-      alert(msg);
+    } else {
+      alert(res?.data?.message || "Gagal menghapus data.");
     }
-  };
+
+  } catch (err) {
+    console.error("Gagal menghapus:", err);
+    alert("Terjadi kesalahan jaringan.");
+  }
+};
+
 
   // --- ICON COMPONENTS ---
   const IconAdd = () => (

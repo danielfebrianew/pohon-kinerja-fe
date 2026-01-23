@@ -23,7 +23,7 @@ export async function fetchApi({
   token,
   web
 }: ReqApi) {
-  const baseURL = process.env.SITE_URL;
+  const baseURL = process.env.NEXT_PUBLIC_API_URL;
   const headers = new Headers();
 
   const isFormData = body instanceof FormData;

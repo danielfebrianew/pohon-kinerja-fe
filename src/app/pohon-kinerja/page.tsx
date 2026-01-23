@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import apiClient from '@/src/lib/axios'; // Adjusted path if needed
+import { fetchApi } from '@/src/lib/fetcher';
 import './treeflex.css';
 import PohonNode from '@/src/components/PohonNode';
 import { PohonKinerja, TematikItem } from '@/src/app/pohon-kinerja/types';
@@ -10,6 +10,7 @@ import { PohonKinerja, TematikItem } from '@/src/app/pohon-kinerja/types';
 // Import komponen layout
 import Sidebar from "@/src/components/global/sidebar/Sidebar"; 
 import PageHeader from "@/src/components/global/header/Header"; 
+import Breadcrumb from "@/src/components/global/breadcrumb/Breadcrumb";
 
 const PohonKinerjaPage = () => {
     // Hooks untuk URL Params
@@ -57,10 +58,15 @@ const PohonKinerjaPage = () => {
     useEffect(() => {
         const fetchTematikList = async () => {
             try {
-                const response = await apiClient.get('/pohon-kinerja/tematik');
-                if (response.data.success) {
-                    setListTematik(response.data.data);
-                }
+                const res = await fetchApi({
+                    type: "withoutAuth",
+                    url: "/pohon-kinerja/tematik",
+                    method: "GET"
+                    });
+
+                    if (res?.data?.success) {
+                    setListTematik(res.data.data);
+                    }
             } catch (err) {
                 console.error("Gagal load list tematik", err);
                 setError("Gagal memuat daftar pohon.");
@@ -77,12 +83,18 @@ const PohonKinerjaPage = () => {
             setError(null);
             
             try {
-                const response = await apiClient.get(`/pohon-kinerja/${selectedId}`);
-                if (response.data.success) {
-                    setTreeData(response.data.data);
+                const res = await fetchApi({
+                type: "withoutAuth",
+                url: `/pohon-kinerja/${selectedId}`,
+                method: "GET"
+                });
+
+                if (res?.data?.success) {
+                setTreeData(res.data.data);
                 } else {
-                    setError(response.data.message);
+                setError(res?.data?.message || "Gagal memuat data");
                 }
+ 
             } catch (err) {
                 console.error("Gagal load tree detail", err);
                 setError("Gagal memuat visualisasi pohon.");
@@ -111,7 +123,8 @@ const PohonKinerjaPage = () => {
 
                 {/* Main Content Area */}
                 <main className="flex-1 overflow-y-auto p-4 md:p-6">
-                    
+                    <Breadcrumb />
+
                     {/* Kotak Kontrol/Dropdown */}
                     <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6 mb-6">
                         <div className="flex flex-col items-center justify-center gap-3">

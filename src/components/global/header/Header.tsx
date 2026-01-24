@@ -1,25 +1,21 @@
 "use client";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import Select from "react-select";
 import Cookies from "js-cookie";
 import { setCookie, getCookie } from "@/src/components/lib/Cookie";
 import { AlertNotification } from "../Alert";
 import { usePathname } from "next/navigation";
 
+// JSON lokal
+import opdData from "@/src/data/opd.json";
+import tahunData from "@/src/data/tahun.json";
+
 interface OptionTypeString {
   value: string;
   label: string;
 }
 
-const API_PERIODE =
-  process.env.NEXT_PUBLIC_PERIODE_API ??
-  "https://periode-service-test.zeabur.app/periode";
-
-const API_OPD =
-  process.env.NEXT_PUBLIC_OPD_API ??
-  "https://periode-service-test.zeabur.app/list_opd";
-
-const safeParseOption = (v: string | null | undefined) => {
+const safeParse = (v: string | null | undefined) => {
   if (!v) return null;
   try {
     return JSON.parse(v);
@@ -37,102 +33,77 @@ const Header = () => {
 
   // OPD
   const [dinasOptions, setDinasOptions] = useState<OptionTypeString[]>([]);
-  const [loadingDinas, setLoadingDinas] = useState(false);
   const [selectedDinas, setSelectedDinas] =
     useState<OptionTypeString | null>(null);
 
-  // PERIODE
-  const [periodeOptions, setPeriodeOptions] = useState<OptionTypeString[]>([]);
-  const [loadingPeriode, setLoadingPeriode] = useState(false);
-  const [selectedPeriode, setSelectedPeriode] =
+  // TAHUN
+  const [tahunOptions, setTahunOptions] = useState<OptionTypeString[]>([]);
+  const [selectedTahun, setSelectedTahun] =
     useState<OptionTypeString | null>(null);
 
-  // INIT COOKIE
+  // INIT dari COOKIE
   useEffect(() => {
     setIsClient(true);
-    const d = safeParseOption(getCookie("selectedDinas"));
-    const p = safeParseOption(getCookie("selectedPeriode"));
+    const d = safeParse(getCookie("opd"));
+    const t = safeParse(getCookie("tahun"));
     if (d) setSelectedDinas(d);
-    if (p) setSelectedPeriode(p);
+    if (t) setSelectedTahun(t);
   }, []);
 
-  // FETCH OPD
+  // Load OPD dari JSON
   useEffect(() => {
     if (!isClient) return;
-
-    const fetchDinas = async () => {
-      setLoadingDinas(true);
-      try {
-        const res = await fetch(API_OPD, { cache: "no-store" });
-        const json = await res.json();
-        const options = (json?.data ?? []).map((it: any) => ({
-          value: String(it.kode_opd),
-          label: String(it.nama_opd),
-        }));
-        setDinasOptions(options);
-      } finally {
-        setLoadingDinas(false);
-      }
-    };
-
-    fetchDinas();
+    const options = opdData.map((it: any) => ({
+      value: String(it.kode),
+      label: String(it.nama),
+    }));
+    setDinasOptions(options);
   }, [isClient]);
 
-  // FETCH PERIODE
+  // Load TAHUN dari JSON
   useEffect(() => {
     if (!isClient) return;
-
-    const fetchPeriode = async () => {
-      setLoadingPeriode(true);
-      try {
-        const res = await fetch(API_PERIODE, { cache: "no-store" });
-        const json = await res.json();
-        const options = (json?.data ?? []).map((it: any) => ({
-          value: String(it.id),
-          label: `${it.tahun_awal}-${it.tahun_akhir}`,
-        }));
-        setPeriodeOptions(options);
-      } finally {
-        setLoadingPeriode(false);
-      }
-    };
-
-    fetchPeriode();
+    const options = tahunData.map((it: any) => ({
+      value: String(it.id),
+      label: it.label,
+    }));
+    setTahunOptions(options);
   }, [isClient]);
 
-  // SYNC COOKIE
+  // SYNC COOKIE (REAL GLOBAL STATE)
   useEffect(() => {
     if (!isClient) return;
     if (selectedDinas)
-      setCookie("selectedDinas", JSON.stringify(selectedDinas));
-    else Cookies.remove("selectedDinas");
+      setCookie("opd", JSON.stringify(selectedDinas));
+    else Cookies.remove("opd");
   }, [isClient, selectedDinas]);
 
   useEffect(() => {
     if (!isClient) return;
-    if (selectedPeriode)
-      setCookie("selectedPeriode", JSON.stringify(selectedPeriode));
-    else Cookies.remove("selectedPeriode");
-  }, [isClient, selectedPeriode]);
+    if (selectedTahun)
+      setCookie("tahun", JSON.stringify(selectedTahun));
+    else Cookies.remove("tahun");
+  }, [isClient, selectedTahun]);
 
   const handleActivate = () => {
     if (!selectedDinas) {
       AlertNotification("Gagal", "Pilih OPD dulu", "error", 2000, true);
       return;
     }
-    if (!selectedPeriode) {
-      AlertNotification("Gagal", "Pilih Periode dulu", "error", 2000, true);
+    if (!selectedTahun) {
+      AlertNotification("Gagal", "Pilih Tahun dulu", "error", 2000, true);
       return;
     }
 
     AlertNotification(
       "Berhasil",
-      "Filter OPD & Periode diaktifkan",
+      "Filter OPD & Tahun diaktifkan",
       "success",
       1200,
       false
     );
-    setTimeout(() => window.location.reload(), 1200);
+
+    setTimeout(() => window.location.reload(), 800);
   };
 
   return (
@@ -147,22 +118,20 @@ const Header = () => {
               value={selectedDinas}
               options={dinasOptions}
               onChange={(opt) => setSelectedDinas(opt)}
-              isLoading={loadingDinas}
               placeholder="Pilih OPD"
               isSearchable
               isClearable
             />
           </div>
 
-          {/* PERIODE */}
-          <div className="w-full sm:w-48 text-sm text-gray-800">
+          {/* TAHUN */}
+          <div className="w-full sm:w-40 text-sm text-gray-800">
             <Select
-              instanceId="select-periode"
-              value={selectedPeriode}
-              options={periodeOptions}
-              onChange={(opt) => setSelectedPeriode(opt)}
-              isLoading={loadingPeriode}
-              placeholder="Pilih Periode"
+              instanceId="select-tahun"
+              value={selectedTahun}
+              options={tahunOptions}
+              onChange={(opt) => setSelectedTahun(opt)}
+              placeholder="Pilih Tahun"
               isSearchable
               isClearable
             />

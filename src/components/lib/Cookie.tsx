@@ -29,6 +29,7 @@ export const setCookie = (
   let cookie = `${encodeURIComponent(name)}=${encodeURIComponent(
     value,
   )}; Path=${path}; SameSite=${sameSite}`;
+
   if (secure) cookie += "; Secure";
   if (typeof maxAge === "number") cookie += `; Max-Age=${maxAge}`;
   if (expires instanceof Date) cookie += `; Expires=${expires.toUTCString()}`;
@@ -59,63 +60,56 @@ export const removeCookie = (name: string, path = "/") => {
   )}=; Path=${path}; Expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax`;
 };
 
-// ==================================
-// Auth helpers: login / logout / get
-// ==================================
+// ==========================
+// Auth helpers
+// ==========================
 
 export async function login(
   username: string,
   password: string,
 ): Promise<void> {
-  // ! BYPASS: Simulasi delay network 1 detik biar kerasa loading
   await new Promise((resolve) => setTimeout(resolve, 1000));
 
-  // ! BYPASS: Hardcode data user (Admin Mode)
   const mockSessionId = "dev-session-" + Date.now();
   const mockUser = {
-    username: username,
+    username,
     nama: "Developer Mode",
-    role: "ADMIN", // Set role tertinggi
+    role: "ADMIN",
     nip: username,
   };
 
-  // ! BYPASS: Set Token & Session Dummy ke Cookie & LocalStorage
   localStorage.setItem("sessionId", mockSessionId);
-  
-  // Cookie diset manual agar middleware frontend mendeteksi user sudah login
+
   document.cookie = `sessionId=${mockSessionId}; path=/; SameSite=Lax`;
   document.cookie = `token=dummy-token-bypass; path=/; SameSite=Lax`;
   document.cookie = `user=${JSON.stringify(mockUser)}; path=/; SameSite=Lax`;
 
-  // ! BYPASS: Notifikasi Sukses
-  AlertNotification("Login Bypass Berhasil", "Mode Development", "success", 2000, true);
+  AlertNotification("Login Berhasil", "Mode Development", "success", 2000, true);
 }
 
 export const logout = () => {
-  // Hapus semua cookies auth
   removeCookie("sessionId", "/");
   removeCookie("token", "/");
   removeCookie("user", "/");
   removeCookie("opd", "/");
-  removeCookie("periode", "/");
   removeCookie("tahun", "/");
 
-  // Bersih-bersih localStorage
   try {
     localStorage.removeItem("sessionId");
     localStorage.removeItem("token");
-    localStorage.removeItem("opd");
     localStorage.removeItem("user");
-    localStorage.removeItem("periode");
+    localStorage.removeItem("opd");
   } catch {}
 
-  // Redirect ke login
   if (typeof window !== "undefined") {
     window.location.href = "/login";
   }
 };
 
-// Helpers pembacaan data user
+// ==========================
+// Global context helpers
+// ==========================
+
 export const getUser = () => {
   const raw = getCookie("user");
   if (!raw) return undefined;
@@ -127,33 +121,31 @@ export const getUser = () => {
 };
 
 export const getToken = () => {
-  const t = getCookie("token");
-  return t ?? null;
+  return getCookie("token");
 };
 
 export const getSessionId = () => {
-  const t = localStorage.getItem("sessionId");
-  return t ?? "-";
+  return localStorage.getItem("sessionId") ?? "-";
 };
 
+/**
+ * GLOBAL FILTER ENGINE
+ * dipakai semua page (Tematik, Pohon, dll)
+ */
 export const getOpdTahun = () => {
   const tRaw = getCookie("tahun");
   const oRaw = getCookie("opd");
-  let tahun: any = null;
-  let opd: any = null;
+
+  let tahun: { value: string; label: string } | null = null;
+  let opd: { value: string; label: string } | null = null;
+
   try {
     if (tRaw) tahun = JSON.parse(tRaw);
   } catch {}
+
   try {
     if (oRaw) opd = JSON.parse(oRaw);
   } catch {}
-  return { tahun, opd };
-};
 
-export const getPeriode = () => {
-  const pRaw = getCookie("periode");
-  try {
-    if (pRaw) return { periode: JSON.parse(pRaw) };
-  } catch {}
-  return { periode: null };
+  return { tahun, opd };
 };

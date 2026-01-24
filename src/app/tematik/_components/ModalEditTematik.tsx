@@ -1,30 +1,40 @@
 "use client";
 
-import { useState } from "react";
-import { X, Plus, Trash2, Save } from "lucide-react";
+import { useEffect, useState } from "react";
+import { X, Plus, Trash2 } from "lucide-react";
 import { fetchApi } from "@/src/lib/fetcher";
 
-interface ModalAddTematikProps {
+interface ModalEditTematikProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  data: any;
 }
 
-const ModalAddTematik: React.FC<ModalAddTematikProps> = ({
+const ModalEditTematik: React.FC<ModalEditTematikProps> = ({
   isOpen,
   onClose,
   onSuccess,
+  data,
 }) => {
-  // State Form
   const [namaTema, setNamaTema] = useState("");
   const [keterangan, setKeterangan] = useState("");
-  const [tahun, setTahun] = useState("2025");
-
-  // Indikator (string aja, nanti dimapping)
+  const [tahun, setTahun] = useState("");
   const [indikators, setIndikators] = useState<string[]>([""]);
   const [isLoading, setIsLoading] = useState(false);
 
-  // --- Logic Indikator ---
+  // === FIX UTAMA ADA DI SINI ===
+  useEffect(() => {
+    if (isOpen && data) {
+      setNamaTema(data.namaPohon || "");
+      setKeterangan(data.keterangan || "");
+      setTahun(String(data.tahun || ""));
+      setIndikators(
+        data.indikators?.map((i: any) => i.indikator) || [""]
+      );
+    }
+  }, [isOpen, data]);
+
   const handleAddIndikator = () => {
     setIndikators([...indikators, ""]);
   };
@@ -41,18 +51,16 @@ const ModalAddTematik: React.FC<ModalAddTematikProps> = ({
     setIndikators(list);
   };
 
-  // --- SUBMIT ---
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      // Mapping indikator ke format backend
       const formattedIndikators = indikators
         .filter(i => i.trim() !== "")
         .map((indikator) => ({
           id: 0,
-          indikator: indikator,
+          indikator,
           keterangan: "",
           tahun: Number(tahun),
           targets: [
@@ -66,41 +74,36 @@ const ModalAddTematik: React.FC<ModalAddTematikProps> = ({
         }));
 
       const payload = {
+        parentId: data.parentId,
         namaPohon: namaTema,
-        keterangan: keterangan,
+        keterangan,
         tahun: Number(tahun),
         jenisPohon: "TEMATIK",
-        levelPohon: 0,
-        kodeOpd: "",
-        kodePemda: "",
-        status: "DRAFT",
+        levelPohon: data.levelPohon,
+        kodeOpd: data.kodeOpd || "",
+        kodePemda: data.kodePemda || "",
+        status: data.status || "DRAFT",
         indikators: formattedIndikators
       };
 
-
-      console.log("Payload:", payload);
-
       const res = await fetchApi({
         type: "withoutAuth",
-        url: "/pohon-kinerja",
-        method: "POST",
+        url: `/pohon-kinerja/${data.id}`,
+        method: "PUT",
         body: payload
       });
 
       if (res?.data?.success) {
-        alert("Data berhasil disimpan!");
-        setNamaTema("");
-        setKeterangan("");
-        setIndikators([""]);
+        alert("Data berhasil diperbarui!");
         onSuccess();
         onClose();
       } else {
-        alert(res?.data?.message || "Gagal menyimpan data");
+        alert(res?.data?.message || "Gagal update data");
       }
 
-    } catch (error) {
-      console.error("Gagal menyimpan:", error);
-      alert("Terjadi kesalahan saat menyimpan data.");
+    } catch (err) {
+      console.error(err);
+      alert("Terjadi kesalahan");
     } finally {
       setIsLoading(false);
     }
@@ -109,87 +112,73 @@ const ModalAddTematik: React.FC<ModalAddTematikProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 overflow-y-auto">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto flex flex-col">
-        
-        {/* Header */}
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="bg-white rounded-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+
         <div className="flex justify-between items-center p-6 border-b">
-          <h2 className="text-xl font-bold text-gray-800 uppercase">
-            Form Tambah Tematik Pemda
+          <h2 className="text-xl font-bold uppercase">
+            Form Edit Tematik Pemda
           </h2>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-full"
-          >
+          <button onClick={onClose}>
             <X size={24} />
           </button>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          
-          {/* Nama Tema */}
+
           <div>
-            <label className="block text-xs font-bold mb-2">Nama Tema *</label>
+            <label className="text-xs font-bold">Nama Tema *</label>
             <input
-              type="text"
               required
               value={namaTema}
               onChange={(e) => setNamaTema(e.target.value)}
-              className="w-full border rounded-lg px-4 py-3 text-sm"
+              className="w-full border rounded-lg px-4 py-3"
             />
           </div>
 
-          {/* Keterangan */}
           <div>
-            <label className="block text-xs font-bold mb-2">Keterangan *</label>
+            <label className="text-xs font-bold">Keterangan *</label>
             <textarea
               required
               rows={3}
               value={keterangan}
               onChange={(e) => setKeterangan(e.target.value)}
-              className="w-full border rounded-lg px-4 py-3 text-sm"
+              className="w-full border rounded-lg px-4 py-3"
             />
           </div>
 
-          {/* Tahun */}
           <div>
-            <label className="block text-xs font-bold mb-2">Tahun *</label>
+            <label className="text-xs font-bold">Tahun *</label>
             <select
               value={tahun}
               onChange={(e) => setTahun(e.target.value)}
-              className="w-full border rounded-lg px-4 py-3 text-sm"
+              className="w-full border rounded-lg px-4 py-3"
             >
               {[2024,2025,2026,2027,2028,2029].map(t => (
-                <option key={t} value={t}>{t}</option>
+                <option key={t}>{t}</option>
               ))}
             </select>
           </div>
 
-          {/* Indikator */}
           <div className="border-t pt-4">
-            <label className="block text-xs font-bold mb-4">
-              Indikator Tematik
-            </label>
+            <label className="text-xs font-bold">Indikator</label>
 
-            {indikators.map((indikator, index) => (
-              <div key={index} className="flex gap-2 mb-2">
+            {indikators.map((indikator, i) => (
+              <div key={i} className="flex gap-2 mt-2">
                 <input
-                  type="text"
                   value={indikator}
                   onChange={(e) =>
-                    handleChangeIndikator(e.target.value, index)
+                    handleChangeIndikator(e.target.value, i)
                   }
-                  className="flex-1 border rounded-lg px-4 py-2 text-sm"
-                  placeholder={`Indikator ${index + 1}`}
+                  className="flex-1 border rounded px-4 py-2"
                 />
                 {indikators.length > 1 && (
                   <button
                     type="button"
-                    onClick={() => handleRemoveIndikator(index)}
-                    className="text-red-500 border border-red-200 px-3 rounded"
+                    onClick={() => handleRemoveIndikator(i)}
+                    className="text-red-500"
                   >
-                    <Trash2 size={16} />
+                    <Trash2 size={18} />
                   </button>
                 )}
               </div>
@@ -198,32 +187,27 @@ const ModalAddTematik: React.FC<ModalAddTematikProps> = ({
             <button
               type="button"
               onClick={handleAddIndikator}
-              className="mt-3 w-full border-2 border-dashed py-2 rounded-lg text-blue-500"
+              className="mt-3 w-full border-2 border-dashed py-2 text-blue-500"
             >
               <Plus size={16} /> Tambah Indikator
             </button>
           </div>
 
-          {/* Footer */}
-          <div className="flex flex-col gap-3 pt-4 border-t">
+          <div className="border-t pt-4 flex flex-col gap-3">
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-green-500 text-white py-3 rounded-lg"
+              className="bg-green-500 text-white py-3 rounded-lg"
             >
-              {isLoading ? "Menyimpan..." : (
-                <>
-                  <Save size={16} /> Simpan
-                </>
-              )}
+              {isLoading ? "Menyimpan..." : "Simpan Perubahan"}
             </button>
 
             <button
               type="button"
               onClick={onClose}
-              className="w-full bg-red-500 text-white py-3 rounded-lg"
+              className="bg-red-500 text-white py-3 rounded-lg"
             >
-              Kembali
+              Batal
             </button>
           </div>
 
@@ -233,4 +217,4 @@ const ModalAddTematik: React.FC<ModalAddTematikProps> = ({
   );
 };
 
-export default ModalAddTematik;
+export default ModalEditTematik;

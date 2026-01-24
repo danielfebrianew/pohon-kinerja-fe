@@ -1,25 +1,47 @@
-"use client";
+"use client"; 
 
 import Link from "next/link";
 import { Home } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useMemo } from "react";
 
-const LABEL_MAP: Record<string, string> = {
-  dashboard: "Dashboard",
-  "perencanaan-pemda": "Perencanaan Pemda",
-  tematik: "Tematik Pemda",
-  "pohon-kinerja": "Pohon Kinerja Pemda",
-  opd: "Perencanaan OPD",
+type Crumb = {
+  label: string;
+  href: string;
 };
 
-function toLabel(segment: string) {
-  if (LABEL_MAP[segment]) return LABEL_MAP[segment];
+const MENU_TREE: Record<string, Crumb[]> = {
+  // Dashboard
+  dashboard: [
+    { label: "Dashboard", href: "/dashboard" }
+  ],
 
-  return segment
-    .replace(/-/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase());
-}
+  // Perencanaan Pemda
+  tematik: [
+    { label: "Perencanaan Pemda", href: "/perencanaan-pemda" },
+    { label: "Tematik Pemda", href: "/perencanaan-pemda/tematik" },
+  ],
+  "pohon-kinerja": [
+    { label: "Perencanaan Pemda", href: "/perencanaan-pemda" },
+    { label: "Pohon Kinerja Pemda", href: "/perencanaan-pemda/pohon-kinerja" },
+  ],
+
+  // Perencanaan OPD
+  "pohon-kinerja-opd": [
+    { label: "Perencanaan OPD", href: "/perencanaan-opd" },
+    { label: "Pohon Kinerja OPD", href: "/pohon-kinerja-opd" },
+  ],
+
+  // Data Master
+  "master-opd": [
+    { label: "Data Master", href: "/data-master" },
+    { label: "Master OPD", href: "/data-master/master-opd" },
+  ],
+  "master-role": [
+    { label: "Data Master", href: "/data-master" },
+    { label: "Master Role", href: "/data-master/master-role" },
+  ],
+};
 
 export default function Breadcrumb() {
   const pathname = usePathname();
@@ -27,28 +49,16 @@ export default function Breadcrumb() {
   const items = useMemo(() => {
     if (!pathname) return [];
 
-    const segments = pathname
-      .split("/")
-      .filter(Boolean)
-      .filter((seg) => isNaN(Number(seg))); // skip id
+    const lastSegment = pathname.split("/").filter(Boolean).at(-1);
+    if (!lastSegment) return [];
 
-    let hrefAcc = "";
-
-    return segments.map((seg, idx) => {
-      hrefAcc += `/${seg}`;
-      return {
-        label: toLabel(seg),
-        href: hrefAcc,
-        isLast: idx === segments.length - 1,
-      };
-    });
+    return MENU_TREE[lastSegment] || [];
   }, [pathname]);
 
   if (items.length === 0) return null;
 
   return (
     <div className="text-sm text-gray-500 mb-4 flex items-center gap-2">
-      {/* Home */}
       <Link href="/dashboard" className="hover:text-blue-500 transition-colors">
         <Home size={16} />
       </Link>
@@ -56,7 +66,7 @@ export default function Breadcrumb() {
       {items.map((item, idx) => (
         <div key={idx} className="flex items-center gap-2">
           <span>/</span>
-          {item.isLast ? (
+          {idx === items.length - 1 ? (
             <span className="font-semibold text-gray-700">
               {item.label}
             </span>

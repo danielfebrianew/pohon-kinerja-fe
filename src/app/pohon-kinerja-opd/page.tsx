@@ -1,195 +1,105 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { fetchApi } from '@/src/lib/fetcher';
 import './treeflex.css';
 import PohonNodeOpd from '@/src/components/PohonNodeOpd';
-import { PohonKinerja, TematikItem } from '@/src/app/pohon-kinerja/types';
+import { PohonKinerja } from '@/src/app/pohon-kinerja/types';
 
-// Import komponen layout
 import Sidebar from "@/src/components/global/sidebar/Sidebar"; 
 import PageHeader from "@/src/components/global/header/Header"; 
 import Breadcrumb from '@/src/components/global/breadcrumb/Breadcrumb';
+import { getOpdTahun } from "@/src/components/lib/Cookie";
 
-const PohonKinerjaPage = () => {
-    // Hooks untuk URL Params
-    const router = useRouter();
-    const pathname = usePathname();
-    const searchParams = useSearchParams();
+const PohonKinerjaOpdPage = () => {
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
-    // State untuk Layout
-    const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [treeData, setTreeData] = useState<PohonKinerja | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-    // State untuk Dropdown
-    const [listTematik, setListTematik] = useState<TematikItem[]>([]);
-    const [selectedId, setSelectedId] = useState<number | null>(null);
+  // === AMBIL DARI COOKIE ===
+  useEffect(() => {
+    const { opd, tahun } = getOpdTahun();
 
-    // State untuk Tree Data
-    const [treeData, setTreeData] = useState<PohonKinerja | null>(null);
-    const [loading, setLoading] = useState<boolean>(false);
-    const [error, setError] = useState<string | null>(null);
+    if (!opd || !tahun) {
+      setError("Silakan pilih OPD dan Tahun di header terlebih dahulu.");
+      return;
+    }
 
-    // 1. LOGIC SINKRONISASI URL & STATE
-    useEffect(() => {
-        const pohonIdParam = searchParams.get('pohon_id');
-        if (pohonIdParam) {
-            setSelectedId(Number(pohonIdParam));
+    const fetchTree = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const res = await fetchApi({
+          type: "withoutAuth",
+          url: `/pohon-kinerja/opd?kodeOpd=${opd.value}&tahun=${tahun.value}`,
+          method: "GET"
+        });
+
+        if (res?.data?.success && res.data.data) {
+          setTreeData(res.data.data);
         } else {
-            setSelectedId(null);
-            setTreeData(null);
-        }
-    }, [searchParams]);
-
-    const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const newId = e.target.value;
-        const params = new URLSearchParams(searchParams.toString()); // Fix: toString() needed
-
-        if (newId) {
-            params.set('pohon_id', newId);
-        } else {
-            params.delete('pohon_id');
+          setTreeData(null);
+          setError("Belum ada pohon kinerja untuk OPD & tahun ini.");
         }
 
-        router.replace(`${pathname}?${params.toString()}`);
+      } catch (err) {
+        console.error(err);
+        setError("Gagal memuat pohon kinerja OPD.");
+      } finally {
+        setLoading(false);
+      }
     };
 
-    // 2. FETCH DATA
-    useEffect(() => {
-        const fetchTematikList = async () => {
-            try {
-                const res = await fetchApi({
-                    type: "withoutAuth",
-                    url: "/pohon-kinerja/tematik",
-                    method: "GET"
-                    });
+    fetchTree();
+  }, []);
 
-                    if (res?.data?.success) {
-                    setListTematik(res.data.data);
-                    }
-            } catch (err) {
-                console.error("Gagal load list tematik", err);
-                setError("Gagal memuat daftar pohon.");
-            }
-        };
-        fetchTematikList();
-    }, []);
+  return (
+    <div className="flex h-screen w-full bg-gray-100 overflow-hidden font-sans text-gray-800">
+      <Sidebar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
 
-    useEffect(() => {
-        if (!selectedId) return; 
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <header className="p-4">
+          <PageHeader />
+        </header>
 
-        const fetchTreeDetail = async () => {
-            setLoading(true);
-            setError(null);
-            
-            try {
-                const res = await fetchApi({
-                type: "withoutAuth",
-                url: `/pohon-kinerja/${selectedId}`,
-                method: "GET"
-                });
+        <main className="flex-1 overflow-y-auto p-4 md:p-6">
+          <Breadcrumb />
 
-                if (res?.data?.success) {
-                setTreeData(res.data.data);
-                } else {
-                setError(res?.data?.message || "Gagal memuat data");
-                }
- 
-            } catch (err) {
-                console.error("Gagal load tree detail", err);
-                setError("Gagal memuat visualisasi pohon.");
-            } finally {
-                setLoading(false);
-            }
-        };
+          <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6 mb-6">
+            <h1 className="text-xl font-bold text-gray-800 text-center">
+              Visualisasi Pohon Kinerja OPD
+            </h1>
+          </div>
 
-        fetchTreeDetail();
-    }, [selectedId]); 
+          <div className="w-full bg-white rounded-xl shadow-md border border-gray-200 p-4 min-h-[500px] overflow-x-auto">
 
-    return (
-        // Container Utama
-        <div className="flex h-screen w-full bg-gray-100 overflow-hidden font-sans text-gray-800">
-            
-            {/* 1. SIDEBAR */}
-            <Sidebar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
+            {loading && (
+              <div className="flex items-center justify-center h-64 text-gray-500">
+                Memuat pohon kinerja...
+              </div>
+            )}
 
-            {/* 2. AREA KANAN */}
-            <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-                
-                {/* Header Container */}
-                <header className="p-4">
-                    <PageHeader />
-                </header>
-                
-                {/* Main Content Area */}
-                <main className="flex-1 overflow-y-auto p-4 md:p-6">
-                    <Breadcrumb />
-                    {/* Kotak Kontrol/Dropdown */}
-                    <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6 mb-6">
-                        <div className="flex flex-col items-center justify-center gap-3">
-                            <h1 className="text-xl font-bold text-gray-800">
-                                Visualisasi Pohon Kinerja Pemda
-                            </h1>
-                            <div className="flex flex-col sm:flex-row items-center gap-3 w-full max-w-md">
-                                <label className="text-sm font-semibold text-gray-600 whitespace-nowrap">
-                                    Pilih Pohon Tematik:
-                                </label>
-                                <select 
-                                    className="w-full p-2 border border-gray-300 rounded-md shadow-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none text-sm"
-                                    onChange={handleSelectChange}
-                                    value={selectedId || ""}
-                                >
-                                    <option value="" disabled>-- Pilih Tematik --</option>
-                                    {listTematik.map((item) => (
-                                        <option key={item.id} value={item.id}>
-                                            {item.namaPohon} ({item.tahun})
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                        </div>
-                    </div>
+            {error && (
+              <div className="flex items-center justify-center h-64 text-red-500 font-medium text-center">
+                {error}
+              </div>
+            )}
 
-                    {/* Area Visualisasi Tree */}
-                    <div className="w-full bg-white rounded-xl shadow-md border border-gray-200 p-4 min-h-[500px] overflow-x-auto">
-                        
-                        {/* Loading State */}
-                        {loading && (
-                            <div className="flex items-center justify-center h-64 text-gray-500 animate-pulse">
-                                <div className="flex flex-col items-center gap-2">
-                                    <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                                    <p>Memuat data pohon...</p>
-                                </div>
-                            </div>
-                        )}
+            {!loading && !error && treeData && (
+              <div className="tf-tree tf-gap-lg flex justify-center items-start min-w-max mx-auto py-10">
+                <ul>
+                  <PohonNodeOpd node={treeData} />
+                </ul>
+              </div>
+            )}
+          </div>
+        </main>
+      </div>
+    </div>
+  );
+};
 
-                        {/* Error State */}
-                        {error && (
-                            <div className="flex items-center justify-center h-64 text-red-500 font-medium text-center">
-                                {error}
-                            </div>
-                        )}
-
-                        {/* Empty State (No Selection) */}
-                        {!loading && !error && !selectedId && (
-                            <div className="flex items-center justify-center h-64 text-blue-400 italic text-center">
-                                Silakan pilih tematik di atas untuk melihat pohon kinerja.
-                            </div>
-                        )}
-
-                        {/* Data Visualization */}
-                        {!loading && !error && treeData && (
-                            <div className="tf-tree tf-gap-lg flex justify-center items-start min-w-max mx-auto py-10">
-                                <ul>
-                                    <PohonNodeOpd node={treeData} />
-                                </ul>
-                            </div>
-                        )}
-                    </div>
-                </main>
-            </div>
-        </div>
-    );
-}
-
-export default PohonKinerjaPage;
+export default PohonKinerjaOpdPage;

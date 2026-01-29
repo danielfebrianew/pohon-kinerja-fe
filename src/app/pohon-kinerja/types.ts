@@ -24,6 +24,8 @@ export interface PohonKinerja {
   jenisPohon: string;
   levelPohon: number;
   status: string;
+  kodeOpd?: string;
+  kodePemda?: string;
   // Perhatikan backend mengirim "indikator" bukan "indikators"
   indikator: Indikator[]; 
   children: PohonKinerja[];

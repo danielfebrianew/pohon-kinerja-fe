@@ -14,7 +14,11 @@ import { getOpdTahun } from "@/src/components/lib/Cookie";
 const PohonKinerjaOpdPage = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
+  // Perubahan: Kita mungkin punya banyak root (Multi-tree), jadi state bisa berupa array
+  // Tapi jika ingin menampilkan satu saja dulu, gunakan single object.
+  // Disini saya siapkan logic untuk mengambil root pertama.
   const [treeData, setTreeData] = useState<PohonKinerja | null>(null);
+  
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -33,17 +37,28 @@ const PohonKinerjaOpdPage = () => {
 
       try {
         const res = await fetchApi({
-          type: "withoutAuth",
-          url: `/pohon-kinerja/opd?kodeOpd=${opd.value}&tahun=${tahun.value}`,
+          type: "withoutAuth", 
+          url: `/pohon-kinerja/opd/${opd.value}/${tahun.value}`,
           method: "GET"
         });
 
+        // --- PERBAIKAN UTAMA DI SINI ---
         if (res?.data?.success && res.data.data) {
-          setTreeData(res.data.data);
+          const responseData = res.data.data;
+          
+          // Cek apakah ada array 'roots' dan isinya tidak kosong
+          if (responseData.roots && Array.isArray(responseData.roots) && responseData.roots.length > 0) {
+             // Ambil pohon pertama dari array roots
+             setTreeData(responseData.roots[0]);
+          } else {
+             setTreeData(null);
+             setError("Data pohon tidak ditemukan dalam response.");
+          }
         } else {
           setTreeData(null);
-          setError("Belum ada pohon kinerja untuk OPD & tahun ini.");
+          setError(res?.data?.message || "Belum ada pohon kinerja untuk OPD & tahun ini.");
         }
+        // -------------------------------
 
       } catch (err) {
         console.error(err);
@@ -94,6 +109,12 @@ const PohonKinerjaOpdPage = () => {
                   <PohonNodeOpd node={treeData} />
                 </ul>
               </div>
+            )}
+            
+            {!loading && !error && !treeData && (
+                <div className="flex items-center justify-center h-64 text-gray-500 italic">
+                    Data tidak tersedia.
+                </div>
             )}
           </div>
         </main>

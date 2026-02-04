@@ -6,13 +6,16 @@ import { PohonKinerja, Indikator } from "@/src/app/pohon-kinerja/types";
 import { getChildInfo, getPohonStyle } from "@/src/app/pohon-kinerja/utils";
 import { FormAddChildModal } from "@/src/app/pohon-kinerja/_components/ModalAdd";
 import { FormEditNode } from "@/src/app/pohon-kinerja/_components/ModalEdit";
+import { getCookie } from "@/src/components/lib/Cookie";
 
 interface PohonNodeProps {
   node: PohonKinerja;
   onTreeRefresh?: () => void;
   onDeleteAction?: (nodeId: number) => void;
-  isRoot?: boolean; // Tambahan: untuk deteksi apakah ini root node
+  isRoot?: boolean; 
 }
+
+const STRATEGIC_LEVEL = 4;
 
 const getHeaderStyle = (jenisPohon: string) => {
   switch (jenisPohon) {
@@ -36,17 +39,50 @@ const getButtonColor = (jenisPohon: string) => {
 const PohonNode: React.FC<PohonNodeProps> = ({ node, onTreeRefresh, onDeleteAction, isRoot = false }) => {
   const styles = getPohonStyle(node.levelPohon);
   const childInfo = getChildInfo(node.levelPohon);
+  
   const hasChildren = node.children && node.children.length > 0;
 
-  // State untuk toggle expand/collapse anak
-  const [isExpanded, setIsExpanded] = useState(true); // Default: expanded
-  
-  // State untuk trigger form add child
+  // State
+  const [isExpanded, setIsExpanded] = useState(true); 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  // State untuk trigger edit mode
   const [isEditing, setIsEditing] = useState(false);
+  const [forcedChild, setForcedChild] = useState<null | {
+  nextLevel: number;
+  nextJenis: string;
+  label: string;
+}>(null);
 
-  // --- HANDLER TOMBOL TAMPILKAN/SEMBUNYIKAN ---
+
+  // --- LOGIC: AMBIL DATA DARI COOKIE ---
+  // Fungsi helper untuk parsing cookie json string aman
+  const getContextFromCookie = () => {
+    try {
+      const opdRaw = getCookie("opd");
+      const tahunRaw = getCookie("tahun");
+      
+      let kodeOpd = "";
+      let tahun = new Date().getFullYear();
+
+      if (opdRaw) {
+        const parsedOpd = JSON.parse(opdRaw);
+        kodeOpd = parsedOpd.value || parsedOpd.kode || "";
+      }
+
+      if (tahunRaw) {
+        const parsedTahun = JSON.parse(tahunRaw);
+        tahun = Number(parsedTahun.value || parsedTahun.tahun || tahun);
+      }
+
+      return { kodeOpd, tahun };
+    } catch (error) {
+      console.warn("Gagal parsing cookie, menggunakan default", error);
+      return { kodeOpd: "", tahun: new Date().getFullYear() };
+    }
+  };
+
+  const { kodeOpd, tahun } = getContextFromCookie();
+
+  // --- HANDLER ---
   const handleToggleExpand = () => {
     setIsExpanded(!isExpanded);
   };
@@ -71,10 +107,12 @@ const PohonNode: React.FC<PohonNodeProps> = ({ node, onTreeRefresh, onDeleteActi
     <li>
       {/* --- LOGIC RENDER CARD UTAMA --- */}
       {isEditing ? (
-        // Mode Edit: Tampilkan FormEditNode
         <div className="tf-nc" style={{ padding: 0, border: 'none', background: 'transparent' }}>
           <FormEditNode
             node={node}
+            // Passing context OPD dan Tahun ke Form Edit
+            kodeOpd={kodeOpd}
+            tahun={tahun}
             onCancel={() => setIsEditing(false)}
             onSuccess={() => {
               setIsEditing(false);
@@ -83,7 +121,6 @@ const PohonNode: React.FC<PohonNodeProps> = ({ node, onTreeRefresh, onDeleteActi
           />
         </div>
       ) : (
-        // Mode Normal: Tampilkan Card Pohon
         <div className={`tf-nc tf flex flex-col rounded-lg shadow-lg ${styles.card} max-w-sm relative`}>
           {/* Header Card */}
           <div className={`flex flex-col rounded-lg shadow-sm mb-2 border p-3 ${styles.header} ${getHeaderStyle(node.jenisPohon)}`}>
@@ -98,7 +135,7 @@ const PohonNode: React.FC<PohonNodeProps> = ({ node, onTreeRefresh, onDeleteActi
                   <td className="border p-2 font-semibold text-gray-600 w-24">Tema </td>
                   <td className="border p-2">{node.namaPohon}</td>
                 </tr>
-                {node.indikator.length > 0 ? (
+                {node.indikator && node.indikator.length > 0 ? (
                   node.indikator.map((ind: Indikator, idx: number) => (
                     <React.Fragment key={ind.id}>
                       <tr>
@@ -117,22 +154,23 @@ const PohonNode: React.FC<PohonNodeProps> = ({ node, onTreeRefresh, onDeleteActi
                           ))}
                         </td>
                       </tr>
-                      <tr>
-                        <td className="border p-2 font-semibold text-gray-600 w-24">Keterangan</td>
-                        <td className="border p-2">{node.keterangan || <span className="text-gray-400 italic">-</span>}</td>
-                      </tr>
                     </React.Fragment>
                   ))
                 ) : (
-                  <tr><td className="border p-2 font-semibold text-gray-600">Indikator</td><td className="border p-2 text-gray-400 italic">-</td></tr>
+                  <>
+                    <tr><td className="border p-2 font-semibold text-gray-600">Indikator</td><td className="border p-2 text-gray-400 italic">-</td></tr>
+                    <tr><td className="border p-2 font-semibold text-gray-600">Target/Satuan</td><td className="border p-2 text-gray-400 italic">-</td></tr>
+                  </>
                 )}
+                <tr>
+                  <td className="border p-2 font-semibold text-gray-600 w-24">Keterangan</td>
+                  <td className="border p-2">{node.keterangan || <span className="text-gray-400 italic">-</span>}</td>
+                </tr>
               </tbody>
             </table>
 
             {/* Area Tombol Aksi */}
             <div className="flex-wrap">
-
-              {/* Grup Tombol 1: Edit, Cetak, Hapus */}
               <div className="flex gap-3 justify-evenly my-4 hide-on-capture text-xs">
                 <button
                   onClick={() => setIsEditing(true)}
@@ -141,9 +179,7 @@ const PohonNode: React.FC<PohonNodeProps> = ({ node, onTreeRefresh, onDeleteActi
                   <IconEdit /> Edit
                 </button>
 
-                <button
-                  className="px-2 py-1 text-xs whitespace-nowrap flex justify-center items-center bg-linear-to-r from-[#08C2FF] to-[#006BFF] hover:from-[#0584AD] hover:to-[#014CB2] text-white rounded-md transition-all shadow-sm"
-                >
+                <button className="px-2 py-1 text-xs whitespace-nowrap flex justify-center items-center bg-linear-to-r from-[#08C2FF] to-[#006BFF] hover:from-[#0584AD] hover:to-[#014CB2] text-white rounded-md transition-all shadow-sm">
                   <IconCetak />
                   <span className="font-semibold">Cetak</span>
                 </button>
@@ -156,32 +192,40 @@ const PohonNode: React.FC<PohonNodeProps> = ({ node, onTreeRefresh, onDeleteActi
                 </button>
               </div>
 
-              {/* Grup Tombol 2: Tampilkan, Tambah Anak & Strategic */}
               <div className="flex gap-3 justify-evenly my-4 hide-on-capture text-xs">
+  {childInfo && (
+    <button
+      onClick={() => {
+        setForcedChild(null); // default flow
+        setIsAddModalOpen(true);
+      }}
+      className={`px-2 py-1 whitespace-nowrap flex justify-center rounded-md items-center bg-white border-2 transition-colors hover:text-white ${getButtonColor(node.jenisPohon)}`}
+    >
+      <IconAdd />
+      {childInfo.label}
+    </button>
+  )}
 
-                {childInfo && (
-                  <button
-                    onClick={() => setIsAddModalOpen(true)}
-                    className={`px-2 py-1 whitespace-nowrap flex justify-center rounded-md items-center bg-white border-2 transition-colors hover:text-white ${getButtonColor(node.jenisPohon)}`}
-                  >
-                    <IconAdd />
-                    {childInfo.label}
-                  </button>
-                )}
+{node.levelPohon < STRATEGIC_LEVEL && (
+  <button
+    onClick={() => {
+      setForcedChild({
+        nextLevel: STRATEGIC_LEVEL,
+        nextJenis: "STRATEGIC_PEMDA",
+        label: "Strategic Pemda",
+      });
+      setIsAddModalOpen(true);
+    }}
 
-                {/* TOMBOL STRATEGIC PEMDA */}
-                {node.levelPohon < 3 && (
-                  <button
-                    onClick={() => setIsAddModalOpen(true)}
-                    className="px-2 py-1 whitespace-nowrap flex justify-center rounded-md items-center bg-white border-2 border-[#D20606] text-[#D20606] hover:bg-[#D20606] hover:text-white transition-colors"
-                  >
-                    <IconAdd />
-                    Strategic Pemda
-                  </button>
-                )}
-              </div>
+      className="px-2 py-1 whitespace-nowrap flex justify-center rounded-md items-center bg-white border-2 border-[#D20606] text-[#D20606] hover:bg-[#D20606] hover:text-white transition-colors"
+    >
+      <IconAdd />
+      Strategic Pemda
+    </button>
+  )}
+</div>
+
               <div className="flex gap-3 justify-evenly my-4 hide-on-capture text-xs">  
-                {/* TOMBOL TAMPILKAN/SEMBUNYIKAN ANAK */}
                 {hasChildren && (
                   <button
                     onClick={handleToggleExpand}
@@ -198,35 +242,40 @@ const PohonNode: React.FC<PohonNodeProps> = ({ node, onTreeRefresh, onDeleteActi
       )}
 
       {/* --- LOGIC RENDER ANAK & FORM TAMBAH --- */}
-      {/* Hanya render <ul> jika isExpanded = true ATAU sedang menambah anak */}
       {(isExpanded || isAddModalOpen) && (hasChildren || isAddModalOpen) && (
         <ul>
-          {/* 1. Render Anak-anak yang sudah ada (hanya jika expanded) */}
+          {/* 1. Render Anak-anak */}
           {isExpanded && hasChildren && node.children.map((child) => (
             <PohonNode
               key={child.id}
               node={child}
               onTreeRefresh={onTreeRefresh}
               onDeleteAction={onDeleteAction}
-              isRoot={false} // Anak bukan root
+              isRoot={false}
             />
           ))}
 
-          {/* 2. Render Form Tambah SEBAGAI ITEM LIST (<li>) TERAKHIR */}
-          {isAddModalOpen && childInfo && (
+          {/* 2. Render Form Tambah */}
+          {isAddModalOpen && (forcedChild || childInfo) && (
             <li>
               <div className="tf-nc" style={{ padding: 0, border: 'none', background: 'transparent' }}>
                 <FormAddChildModal
-                  parentId={node.id}
-                  childInfo={childInfo}
-                  tahun={node.tahun}
-                  onCancel={() => setIsAddModalOpen(false)}
-                  onSuccess={() => {
-                    setIsAddModalOpen(false);
-                    if (onTreeRefresh) onTreeRefresh();
-                    else window.location.reload();
-                  }}
-                />
+  parentId={node.id}
+  childInfo={(forcedChild || childInfo)!}
+  //kodeOpd={kodeOpd}
+  tahun={tahun}
+  onCancel={() => {
+    setIsAddModalOpen(false);
+    setForcedChild(null); // 🔥 reset
+  }}
+  onSuccess={() => {
+    setIsAddModalOpen(false);
+    setForcedChild(null); // 🔥 reset
+    if (onTreeRefresh) onTreeRefresh();
+    else window.location.reload();
+  }}
+/>
+
               </div>
             </li>
           )}

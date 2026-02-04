@@ -15,6 +15,8 @@ interface PohonNodeOpdProps {
   isRoot?: boolean; 
 }
 
+const STRATEGIC_LEVEL = 4;
+
 const getHeaderStyle = (jenisPohon: string) => {
   switch (jenisPohon) {
     case "STRATEGIC_PEMDA": return "border-red-700 text-white bg-gradient-to-r from-[#CA3636] from-40% to-[#BD04A1]";
@@ -37,12 +39,19 @@ const getButtonColor = (jenisPohon: string) => {
 const PohonNodeOpd: React.FC<PohonNodeOpdProps> = ({ node, onTreeRefresh, onDeleteAction, isRoot = false }) => {
   const styles = getPohonStyle(node.levelPohon);
   const childInfo = getChildInfo(node.levelPohon);
+  
   const hasChildren = node.children && node.children.length > 0;
 
   // State
   const [isExpanded, setIsExpanded] = useState(true); 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [forcedChild, setForcedChild] = useState<null | {
+  nextLevel: number;
+  nextJenis: string;
+  label: string;
+}>(null);
+
 
   // --- LOGIC: AMBIL DATA DARI COOKIE ---
   // Fungsi helper untuk parsing cookie json string aman
@@ -184,26 +193,38 @@ const PohonNodeOpd: React.FC<PohonNodeOpdProps> = ({ node, onTreeRefresh, onDele
               </div>
 
               <div className="flex gap-3 justify-evenly my-4 hide-on-capture text-xs">
-                {childInfo && (
-                  <button
-                    onClick={() => setIsAddModalOpen(true)}
-                    className={`px-2 py-1 whitespace-nowrap flex justify-center rounded-md items-center bg-white border-2 transition-colors hover:text-white ${getButtonColor(node.jenisPohon)}`}
-                  >
-                    <IconAdd />
-                    {childInfo.label}
-                  </button>
-                )}
+  {childInfo && (
+    <button
+      onClick={() => {
+        setForcedChild(null); // default flow
+        setIsAddModalOpen(true);
+      }}
+      className={`px-2 py-1 whitespace-nowrap flex justify-center rounded-md items-center bg-white border-2 transition-colors hover:text-white ${getButtonColor(node.jenisPohon)}`}
+    >
+      <IconAdd />
+      {childInfo.label}
+    </button>
+  )}
 
-                {node.levelPohon < 3 && (
-                  <button
-                    onClick={() => setIsAddModalOpen(true)}
-                    className="px-2 py-1 whitespace-nowrap flex justify-center rounded-md items-center bg-white border-2 border-[#D20606] text-[#D20606] hover:bg-[#D20606] hover:text-white transition-colors"
-                  >
-                    <IconAdd />
-                    Strategic Pemda
-                  </button>
-                )}
-              </div>
+{node.levelPohon < STRATEGIC_LEVEL && (
+  <button
+    onClick={() => {
+      setForcedChild({
+        nextLevel: STRATEGIC_LEVEL,
+        nextJenis: "STRATEGIC_PEMDA",
+        label: "Strategic Pemda",
+      });
+      setIsAddModalOpen(true);
+    }}
+
+      className="px-2 py-1 whitespace-nowrap flex justify-center rounded-md items-center bg-white border-2 border-[#D20606] text-[#D20606] hover:bg-[#D20606] hover:text-white transition-colors"
+    >
+      <IconAdd />
+      Strategic Pemda
+    </button>
+  )}
+</div>
+
               <div className="flex gap-3 justify-evenly my-4 hide-on-capture text-xs">  
                 {hasChildren && (
                   <button
@@ -235,22 +256,26 @@ const PohonNodeOpd: React.FC<PohonNodeOpdProps> = ({ node, onTreeRefresh, onDele
           ))}
 
           {/* 2. Render Form Tambah */}
-          {isAddModalOpen && childInfo && (
+          {isAddModalOpen && (forcedChild || childInfo) && (
             <li>
               <div className="tf-nc" style={{ padding: 0, border: 'none', background: 'transparent' }}>
                 <FormAddChildModal
-                  parentId={node.id}
-                  childInfo={childInfo}
-                  // Passing context OPD dan Tahun ke Form Add
-                  kodeOpd={kodeOpd}
-                  tahun={tahun} 
-                  onCancel={() => setIsAddModalOpen(false)}
-                  onSuccess={() => {
-                    setIsAddModalOpen(false);
-                    if (onTreeRefresh) onTreeRefresh();
-                    else window.location.reload();
-                  }}
-                />
+  parentId={node.id}
+  childInfo={(forcedChild || childInfo)!}
+  kodeOpd={kodeOpd}
+  tahun={tahun}
+  onCancel={() => {
+    setIsAddModalOpen(false);
+    setForcedChild(null); // 🔥 reset
+  }}
+  onSuccess={() => {
+    setIsAddModalOpen(false);
+    setForcedChild(null); // 🔥 reset
+    if (onTreeRefresh) onTreeRefresh();
+    else window.location.reload();
+  }}
+/>
+
               </div>
             </li>
           )}

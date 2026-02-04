@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { PohonKinerja } from "@/src/app/pohon-kinerja/types";
+import { PohonKinerja } from "@/src/app/pohon-kinerja-opd/types";
 import { fetchApi } from "@/src/lib/fetcher";
 import { AlertNotification } from "@/src/components/global/Alert";
 
@@ -55,73 +55,69 @@ export const FormEditNode: React.FC<FormEditNodeProps> = ({ node, onCancel, onSu
 
   // --- Submit Data ---
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
+  e.preventDefault();
+  setLoading(true);
 
-    // Gunakan tahun dari props (Cookie) jika ada, jika tidak fallback ke node
-    const activeTahun = tahun ? Number(tahun) : Number(node.tahun);
+  const activeTahun = tahun ? Number(tahun) : Number(node.tahun);
 
-    // Build Indikator Payload
-    const indikatorsPayload = indikators.map(ind => {
-      const targetObj: any = {
-        nilai: Number(ind.nilai), 
-        satuan: ind.satuan,
-        tahun: activeTahun
-      };
-      if (ind.targetId) targetObj.id = ind.targetId;
+  const indikatorsPayload = indikators.map(ind => {
+    if (!ind.targetId) {
+      throw new Error("Target ID wajib ada untuk update.");
+    }
 
-      const indikatorObj: any = {
-        indikator: ind.indikator,
-        tahun: activeTahun,
-        targets: [targetObj]
-      };
-      if (ind.id) indikatorObj.id = ind.id;
+    return {
+      id: ind.id,
+      indikator: ind.indikator,
+      keterangan: node.keterangan || "-",   // 🔥 wajib sesuai Swagger
+      tahun: activeTahun,
+      targets: [
+        {
+          id: ind.targetId,
+          nilai: Number(ind.nilai),
+          satuan: ind.satuan,
+          tahun: activeTahun
+        }
+      ]
+    };
+  });
 
-      return indikatorObj;
+  const payload = {
+    parentId: node.parentId ?? 0,
+    namaPohon: formData.namaPohon,
+    keterangan: formData.keterangan || "-",
+    tahun: activeTahun,
+    jenisPohon: node.jenisPohon,
+    levelPohon: Number(node.levelPohon),
+    kodeOpd: kodeOpd || node.kodeOpd || "",
+    kodePemda: node.kodePemda || "",
+    status: "UPDATE",
+    indikators: indikatorsPayload
+  };
+
+  console.log("FINAL PAYLOAD:", payload);
+
+  try {
+    const response = await fetchApi({
+      url: `/pohon-kinerja/${node.id}`,
+      method: "PUT",
+      body: payload,
+      type: "auth",
     });
 
-    const payload = {
-      // Pastikan semua field terisi
-      id: Number(node.id),
-      parentId: node.parentId || null,
-      namaPohon: formData.namaPohon,
-      keterangan: formData.keterangan,
-      tahun: activeTahun,
-      jenisPohon: node.jenisPohon,
-      levelPohon: Number(node.levelPohon),
-      status: "UPDATE", 
-      
-      // Data Konteks (Penting agar tidak hilang)
-      kodeOpd: kodeOpd || node.kodeOpd || "",
-      kodePemda: node.kodePemda || "",
-      sifat: node.sifat || null,
-
-      indikators: indikatorsPayload
-    };
-
-    console.log("Payload Edit Final:", JSON.stringify(payload, null, 2));
-
-    try {
-      const response = await fetchApi({
-        url: `/pohon-kinerja/${node.id}`,
-        method: "PUT",
-        body: payload,
-        type: "auth",
-      });
-
-      if (response.status === 200 || response.data?.success) {
-        AlertNotification("Berhasil", "Data berhasil diperbarui", "success");
-        onSuccess();
-      } else {
-        throw new Error(response.data?.message || "Gagal memperbarui data");
-      }
-    } catch (error: any) {
-      console.error("Update error:", error);
-      AlertNotification("Gagal", error.message || "Terjadi kesalahan", "error");
-    } finally {
-      setLoading(false);
+    if (response.status === 200 || response.data?.success) {
+      AlertNotification("Berhasil", "Data berhasil diperbarui", "success");
+      onSuccess();
+    } else {
+      throw new Error(response.data?.message || "Gagal memperbarui data");
     }
-  };
+  } catch (error: any) {
+    console.error("Update error:", error);
+    AlertNotification("Gagal", error.message || "Terjadi kesalahan", "error");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   return (
     <div className="bg-white border-2 border-gray-800 rounded-lg p-4 shadow-xl max-w-sm w-full relative text-left">

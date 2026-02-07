@@ -258,8 +258,10 @@ const TematikPage = () => {
         <ModalEditTematik
           isOpen={isEditModalOpen}
           data={selectedEditData}
+          tahun={selectedYear}
           onClose={() => setIsEditModalOpen(false)}
           onSuccess={fetchData}
+          
         />
       </div>
     </div>

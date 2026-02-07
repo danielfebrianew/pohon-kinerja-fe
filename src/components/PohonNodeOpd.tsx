@@ -255,7 +255,7 @@ const PohonNodeOpd: React.FC<PohonNodeOpdProps> = ({ node, onTreeRefresh, onDele
             />
           ))}
 
-          {/* 2. Render Form Tambah
+          {/* 2. Render Modal Tambah Anak */}
           {isAddModalOpen && (forcedChild || childInfo) && (
             <li>
               <div className="tf-nc" style={{ padding: 0, border: 'none', background: 'transparent' }}>
@@ -277,8 +277,8 @@ const PohonNodeOpd: React.FC<PohonNodeOpdProps> = ({ node, onTreeRefresh, onDele
 />
 
               </div>
-            </li> */}
-          {/* )} */}
+            </li>
+          )}
         </ul>
       )}
     </li>

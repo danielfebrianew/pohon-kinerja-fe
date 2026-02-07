@@ -122,21 +122,22 @@ export const FormEditNode: React.FC<FormEditNodeProps> = ({
   };
 
   return (
-
-    <div className="w-full max-w-4xl mx-auto bg-white border border-gray-300 rounded-2xl p-8 shadow-lg relative">
+    // REVISI 1: Width diperbesar (max-w-6xl), Padding diperkecil (p-5)
+    <div className="w-full max-w-6xl mx-auto bg-white border border-gray-300 rounded-2xl p-5 shadow-lg relative">
       
-      {/* HEADER JUDUL */}
-      <div className="border-2 border-gray-800 rounded-lg py-3 px-4 mb-8 text-center">
-        <h3 className="font-bold text-xl uppercase tracking-wider">
+      {/* HEADER JUDUL (Margin bottom dikurangi jadi mb-4) */}
+      <div className="border-2 border-gray-800 rounded-lg py-2 px-4 mb-4 text-center">
+        <h3 className="font-bold text-lg uppercase tracking-wider">
           EDIT {node.jenisPohon?.replace(/_/g, " ")}
         </h3>
       </div>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-8">
+      {/* REVISI 2: Gap antar elemen dirapetin (gap-4) */}
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         
         {/* FIELD NAMA POHON */}
         <div className="text-center">
-          <label className="block text-sm font-bold text-gray-600 uppercase mb-3">
+          <label className="block text-sm font-bold text-gray-600 uppercase mb-2">
             {node.jenisPohon?.replace(/_/g, " ")}
           </label>
           <input
@@ -144,28 +145,30 @@ export const FormEditNode: React.FC<FormEditNodeProps> = ({
             name="namaPohon"
             value={formData.namaPohon}
             onChange={handleChange}
-            className="w-full border border-gray-300 rounded-lg px-4 py-3 text-base focus:ring-2 focus:ring-blue-500 outline-none"
+            // Height input dirapetin (py-2)
+            className="w-full border border-gray-300 rounded-lg px-4 py-2 text-base focus:ring-2 focus:ring-blue-500 outline-none"
             placeholder="Masukkan Nama..."
             required
           />
-           <p className="text-xs text-gray-400 mt-2 font-light">*nama pohon wajib terisi</p>
+           <p className="text-xs text-gray-400 mt-1 font-light">*nama pohon wajib terisi</p>
         </div>
 
         {/* SECTION INDIKATOR */}
         <div>
-          <h4 className="text-center text-blue-700 font-bold text-base uppercase mb-6">
+          <h4 className="text-center text-blue-700 font-bold text-base uppercase mb-4">
             INDIKATOR {node.jenisPohon?.replace(/_/g, " ")} :
           </h4>
 
-          <div className="space-y-6">
+          <div className="space-y-4">
             {indikators.map((ind, idx) => (
               <div
                 key={idx}
-                className="border-2 border-blue-400 rounded-xl p-6 shadow-sm bg-white relative"
+                // Padding dalam indikator dirapetin (p-4)
+                className="border-2 border-blue-400 rounded-xl p-4 shadow-sm bg-white relative"
               >
-                <div className="space-y-5">
+                <div className="space-y-3">
                   <div>
-                    <label className="block text-sm font-bold text-gray-500 uppercase mb-2 text-center">
+                    <label className="block text-sm font-bold text-gray-500 uppercase mb-1 text-center">
                       NAMA INDIKATOR {idx + 1}:
                     </label>
                     <input
@@ -174,12 +177,12 @@ export const FormEditNode: React.FC<FormEditNodeProps> = ({
                       onChange={(e) =>
                         handleIndikatorChange(idx, "indikator", e.target.value)
                       }
-                      className="w-full border border-gray-300 rounded-lg px-4 py-3 text-base focus:border-blue-500 outline-none"
+                      className="w-full border border-gray-300 rounded-lg px-4 py-2 text-base focus:border-blue-500 outline-none"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-bold text-gray-500 uppercase mb-2 text-center">
+                    <label className="block text-sm font-bold text-gray-500 uppercase mb-1 text-center">
                       TARGET :
                     </label>
                     <input
@@ -188,12 +191,12 @@ export const FormEditNode: React.FC<FormEditNodeProps> = ({
                       onChange={(e) =>
                         handleIndikatorChange(idx, "nilai", e.target.value)
                       }
-                      className="w-full border border-gray-300 rounded-lg px-4 py-3 text-base focus:border-blue-500 outline-none"
+                      className="w-full border border-gray-300 rounded-lg px-4 py-2 text-base focus:border-blue-500 outline-none"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-bold text-gray-500 uppercase mb-2 text-center">
+                    <label className="block text-sm font-bold text-gray-500 uppercase mb-1 text-center">
                       SATUAN :
                     </label>
                     <input
@@ -202,14 +205,14 @@ export const FormEditNode: React.FC<FormEditNodeProps> = ({
                       onChange={(e) =>
                         handleIndikatorChange(idx, "satuan", e.target.value)
                       }
-                      className="w-full border border-gray-300 rounded-lg px-4 py-3 text-base focus:border-blue-500 outline-none"
+                      className="w-full border border-gray-300 rounded-lg px-4 py-2 text-base focus:border-blue-500 outline-none"
                     />
                   </div>
 
                   <button
                     type="button"
                     onClick={() => removeIndikator(idx)}
-                    className="w-fit px-6 border-2 border-red-500 text-red-600 rounded-lg py-2 mt-2 text-sm font-bold hover:bg-red-50 transition-colors uppercase"
+                    className="w-fit px-6 border-2 border-red-500 text-red-600 rounded-lg py-1.5 mt-1 text-sm font-bold hover:bg-red-50 transition-colors uppercase"
                   >
                     Hapus
                   </button>
@@ -221,7 +224,7 @@ export const FormEditNode: React.FC<FormEditNodeProps> = ({
           <button
             type="button"
             onClick={addIndikator}
-            className="w-full border-2 border-blue-500 text-blue-600 rounded-lg py-3 mt-6 flex items-center justify-center gap-2 font-bold hover:bg-blue-50 transition-colors uppercase"
+            className="w-full border-2 border-blue-500 text-blue-600 rounded-lg py-2 mt-4 flex items-center justify-center gap-2 font-bold hover:bg-blue-50 transition-colors uppercase"
           >
             <span className="text-lg">⊕</span> Tambah Indikator
           </button>
@@ -229,22 +232,22 @@ export const FormEditNode: React.FC<FormEditNodeProps> = ({
         
         {/* KETERANGAN */}
         <div className="text-center">
-             <label className="block text-sm font-bold text-gray-600 uppercase mb-3">KETERANGAN</label>
+             <label className="block text-sm font-bold text-gray-600 uppercase mb-2">KETERANGAN</label>
              <textarea 
                 name="keterangan" 
                 value={formData.keterangan} 
                 onChange={handleChange} 
-                rows={3} 
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-base focus:ring-2 focus:ring-blue-500 outline-none"
+                rows={2} // Rows dikurangi jadi 2
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 text-base focus:ring-2 focus:ring-blue-500 outline-none"
              />
         </div>
 
         {/* TOMBOL AKSI */}
-        <div className="flex flex-col gap-3 mt-4 pt-4">
+        <div className="flex flex-col gap-2 mt-2 pt-2">
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-[#0095F6] hover:bg-blue-600 text-white py-3 rounded-lg font-bold flex items-center justify-center gap-2 transition disabled:opacity-50"
+            className="w-full bg-[#0095F6] hover:bg-blue-600 text-white py-2.5 rounded-lg font-bold flex items-center justify-center gap-2 transition disabled:opacity-50"
           >
             <Save size={18} />
             {loading ? "Menyimpan..." : "Simpan"}
@@ -254,7 +257,7 @@ export const FormEditNode: React.FC<FormEditNodeProps> = ({
             type="button"
             onClick={onCancel}
             disabled={loading}
-            className="w-full bg-[#D32F2F] hover:bg-red-700 text-white py-3 rounded-lg font-bold flex items-center justify-center gap-2 transition disabled:opacity-50"
+            className="w-full bg-[#D32F2F] hover:bg-red-700 text-white py-2.5 rounded-lg font-bold flex items-center justify-center gap-2 transition disabled:opacity-50"
           >
             <CircleX size={18} />
             Batal

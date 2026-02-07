@@ -236,10 +236,8 @@ useEffect(() => {
               className="w-full border rounded-lg px-4 py-3 text-sm"
             >
               <option value="">Masukkan tahun</option>
-              {tahunOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
+              {[2030, 2029, 2028, 2027, 2026, 2025, 2024, 2023, 2022, 2021, 2020, 2019].map(t => (
+                <option key={t} value={t}>{t}</option>
               ))}
             </select>
             <p className="text-xs text-gray-300 mt-1">

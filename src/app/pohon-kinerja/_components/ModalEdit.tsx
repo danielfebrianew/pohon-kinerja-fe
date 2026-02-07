@@ -4,8 +4,8 @@ import React, { useState } from "react";
 import { PohonKinerja } from "@/src/app/pohon-kinerja/types";
 import { fetchApi } from "@/src/lib/fetcher";
 import { AlertNotification } from "@/src/components/global/Alert";
+import { Save, CircleX } from "lucide-react"; 
 
-// UPDATE INTERFACE: Tambahkan kodeOpd dan tahun
 interface FormEditNodeProps {
   node: PohonKinerja;
   onCancel: () => void;
@@ -14,7 +14,13 @@ interface FormEditNodeProps {
   tahun: number;
 }
 
-export const FormEditNode: React.FC<FormEditNodeProps> = ({ node, onCancel, onSuccess, kodeOpd, tahun }) => {
+export const FormEditNode: React.FC<FormEditNodeProps> = ({
+  node,
+  onCancel,
+  onSuccess,
+  kodeOpd,
+  tahun,
+}) => {
   const [loading, setLoading] = useState(false);
 
   // State Form Utama
@@ -33,11 +39,12 @@ export const FormEditNode: React.FC<FormEditNodeProps> = ({ node, onCancel, onSu
     })) || []
   );
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // --- Logic Indikator Dinamis ---
   const handleIndikatorChange = (index: number, field: string, value: any) => {
     const newIndikators = [...indikators];
     newIndikators[index] = { ...newIndikators[index], [field]: value };
@@ -45,7 +52,10 @@ export const FormEditNode: React.FC<FormEditNodeProps> = ({ node, onCancel, onSu
   };
 
   const addIndikator = () => {
-    setIndikators([...indikators, { id: null, indikator: "", nilai: 0, satuan: "", targetId: null }]);
+    setIndikators([
+      ...indikators,
+      { id: null, indikator: "", nilai: 0, satuan: "", targetId: null },
+    ]);
   };
 
   const removeIndikator = (index: number) => {
@@ -53,138 +63,202 @@ export const FormEditNode: React.FC<FormEditNodeProps> = ({ node, onCancel, onSu
     setIndikators(newIndikators);
   };
 
-  // --- Submit Data ---
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setLoading(true);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
 
-  const activeTahun = tahun ? Number(tahun) : Number(node.tahun);
+    const activeTahun = tahun ? Number(tahun) : Number(node.tahun);
 
-  const indikatorsPayload = indikators.map((ind) => ({
-    id: ind.id ?? undefined,
-    indikator: ind.indikator,
-    keterangan: node.keterangan || "-",
-    tahun: activeTahun,
-    targets: [
-      {
-        id: ind.targetId ?? undefined,
-        nilai: Number(ind.nilai),
-        satuan: ind.satuan,
+    try {
+      const indikatorsPayload = indikators.map((ind) => {
+        return {
+          id: ind.id || 0,
+          indikator: ind.indikator,
+          keterangan: node.keterangan || "-",
+          tahun: activeTahun,
+          targets: [
+            {
+              id: ind.targetId || 0,
+              nilai: Number(ind.nilai),
+              satuan: ind.satuan,
+              tahun: activeTahun,
+            },
+          ],
+        };
+      });
+
+      const payload = {
+        parentId: node.parentId ?? 0,
+        namaPohon: formData.namaPohon,
+        keterangan: formData.keterangan || "-",
         tahun: activeTahun,
-      },
-    ],
-  }));
+        jenisPohon: node.jenisPohon,
+        levelPohon: Number(node.levelPohon),
+        kodeOpd: kodeOpd || node.kodeOpd || "",
+        kodePemda: node.kodePemda || "",
+        status: "UPDATE",
+        indikators: indikatorsPayload,
+      };
 
-  const payload = {
-    // 🔒 WAJIB DIKUNCI (BIAR GAK DIANGGAP MUTASI)
-    parentId: node.parentId,
-    jenisPohon: node.jenisPohon,
-    levelPohon: node.levelPohon,
+      const response = await fetchApi({
+        url: `/pohon-kinerja/${node.id}`,
+        method: "PUT",
+        body: payload,
+        type: "auth",
+      });
 
-    // 📝 BOLEH DIUBAH
-    namaPohon: formData.namaPohon,
-    keterangan: formData.keterangan || "-",
-    tahun: activeTahun,
-
-    // context
-    kodeOpd: kodeOpd || node.kodeOpd,
-    kodePemda: node.kodePemda || "",
-    status: "UPDATE",
-
-    indikators: indikatorsPayload,
+      if (response.status === 200 || response.data?.success) {
+        AlertNotification("Berhasil", "Data berhasil diperbarui", "success");
+        onSuccess();
+      } else {
+        throw new Error(response.data?.message || "Gagal memperbarui data");
+      }
+    } catch (error: any) {
+      console.error("Update error:", error);
+      AlertNotification("Gagal", error.message || "Terjadi kesalahan", "error");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  console.log("FINAL PAYLOAD FIX:", payload);
-
-  try {
-    const response = await fetchApi({
-      url: `/pohon-kinerja/${node.id}`,
-      method: "PUT",
-      body: payload,
-      type: "auth",
-    });
-
-    if (response.status === 200 || response.data?.success) {
-      AlertNotification("Berhasil", "Data berhasil diperbarui", "success");
-      onSuccess();
-    } else {
-      throw new Error(response.data?.message || "Gagal memperbarui data");
-    }
-  } catch (error: any) {
-    console.error("Update error:", error);
-    AlertNotification("Gagal", error.message || "Terjadi kesalahan", "error");
-  } finally {
-    setLoading(false);
-  }
-};
-
-
-
-
   return (
-    <div className="bg-white border-2 border-gray-800 rounded-lg p-4 shadow-xl max-w-sm w-full relative text-left">
-      <h3 className="text-center font-bold text-sm uppercase mb-4 border-b pb-2">Edit {node.jenisPohon?.replace(/_/g, " ")}</h3>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-3 text-xs">
-        <div>
-          <label className="font-bold text-gray-500 block mb-1">Nama {node.jenisPohon}</label>
+    <div className="w-full max-w-4xl mx-auto bg-white border border-gray-300 rounded-2xl p-8 shadow-lg relative">
+      
+      {/* HEADER JUDUL */}
+      <div className="border-2 border-gray-800 rounded-lg py-3 px-4 mb-8 text-center">
+        <h3 className="font-bold text-xl uppercase tracking-wider">
+          EDIT {node.jenisPohon?.replace(/_/g, " ")}
+        </h3>
+      </div>
+
+      <form onSubmit={handleSubmit} className="flex flex-col gap-8">
+        
+        {/* FIELD NAMA POHON */}
+        <div className="text-center">
+          <label className="block text-sm font-bold text-gray-600 uppercase mb-3">
+            {node.jenisPohon?.replace(/_/g, " ")}
+          </label>
           <input
             type="text"
             name="namaPohon"
             value={formData.namaPohon}
             onChange={handleChange}
-            className="w-full border border-gray-300 rounded p-2 focus:ring-2 focus:ring-blue-500 outline-none"
+            className="w-full border border-gray-300 rounded-lg px-4 py-3 text-base focus:ring-2 focus:ring-blue-500 outline-none"
+            placeholder="Masukkan Nama..."
             required
           />
+           <p className="text-xs text-gray-400 mt-2 font-light">*nama pohon wajib terisi</p>
         </div>
 
-        <div className="border border-blue-200 rounded p-2 bg-blue-50/50">
-          <label className="font-bold text-blue-600 block mb-2 text-center border-b border-blue-200 pb-1">INDIKATOR</label>
-          {indikators.map((ind, idx) => (
-            <div key={idx} className="mb-4 border-b border-gray-200 pb-2 last:border-0 last:pb-0">
-              <div className="mb-2">
-                <label className="text-[10px] font-semibold text-gray-500">Nama Indikator {idx + 1}</label>
-                <input
-                  type="text"
-                  value={ind.indikator}
-                  onChange={(e) => handleIndikatorChange(idx, "indikator", e.target.value)}
-                  className="w-full border border-gray-300 rounded p-1.5 focus:border-blue-500 outline-none"
-                />
-              </div>
-              <div className="flex gap-2">
-                <div className="w-1/3">
-                  <label className="text-[10px] font-semibold text-gray-500">Target</label>
-                  <input
-                    type="number"
-                    value={ind.nilai}
-                    onChange={(e) => handleIndikatorChange(idx, "nilai", e.target.value)}
-                    className="w-full border border-gray-300 rounded p-1.5 focus:border-blue-500 outline-none"
-                  />
-                </div>
-                <div className="w-2/3">
-                  <label className="text-[10px] font-semibold text-gray-500">Satuan</label>
-                  <input
-                    type="text"
-                    value={ind.satuan}
-                    onChange={(e) => handleIndikatorChange(idx, "satuan", e.target.value)}
-                    className="w-full border border-gray-300 rounded p-1.5 focus:border-blue-500 outline-none"
-                  />
-                </div>
-              </div>
-              <button type="button" onClick={() => removeIndikator(idx)} className="text-red-500 text-[10px] mt-1 hover:underline w-full text-right">Hapus Indikator</button>
-            </div>
-          ))}
-          <button type="button" onClick={addIndikator} className="w-full mt-2 border border-dashed border-blue-400 text-blue-600 rounded p-1 hover:bg-blue-50 transition">+ Tambah Indikator</button>
-        </div>
-
+        {/* SECTION INDIKATOR */}
         <div>
-          <label className="font-bold text-gray-500 block mb-1">Keterangan</label>
-          <textarea name="keterangan" value={formData.keterangan} onChange={handleChange} rows={2} className="w-full border border-gray-300 rounded p-2 focus:ring-2 focus:ring-blue-500 outline-none" />
+          <h4 className="text-center text-blue-700 font-bold text-base uppercase mb-6">
+            INDIKATOR {node.jenisPohon?.replace(/_/g, " ")} :
+          </h4>
+
+          <div className="space-y-6">
+            {indikators.map((ind, idx) => (
+              <div
+                key={idx}
+                className="border-2 border-blue-400 rounded-xl p-6 shadow-sm bg-white relative"
+              >
+                <div className="space-y-5">
+                  <div>
+                    <label className="block text-sm font-bold text-gray-500 uppercase mb-2 text-center">
+                      NAMA INDIKATOR {idx + 1}:
+                    </label>
+                    <input
+                      type="text"
+                      value={ind.indikator}
+                      onChange={(e) =>
+                        handleIndikatorChange(idx, "indikator", e.target.value)
+                      }
+                      className="w-full border border-gray-300 rounded-lg px-4 py-3 text-base focus:border-blue-500 outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-bold text-gray-500 uppercase mb-2 text-center">
+                      TARGET :
+                    </label>
+                    <input
+                      type="number"
+                      value={ind.nilai}
+                      onChange={(e) =>
+                        handleIndikatorChange(idx, "nilai", e.target.value)
+                      }
+                      className="w-full border border-gray-300 rounded-lg px-4 py-3 text-base focus:border-blue-500 outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-bold text-gray-500 uppercase mb-2 text-center">
+                      SATUAN :
+                    </label>
+                    <input
+                      type="text"
+                      value={ind.satuan}
+                      onChange={(e) =>
+                        handleIndikatorChange(idx, "satuan", e.target.value)
+                      }
+                      className="w-full border border-gray-300 rounded-lg px-4 py-3 text-base focus:border-blue-500 outline-none"
+                    />
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => removeIndikator(idx)}
+                    className="w-fit px-6 border-2 border-red-500 text-red-600 rounded-lg py-2 mt-2 text-sm font-bold hover:bg-red-50 transition-colors uppercase"
+                  >
+                    Hapus
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <button
+            type="button"
+            onClick={addIndikator}
+            className="w-full border-2 border-blue-500 text-blue-600 rounded-lg py-3 mt-6 flex items-center justify-center gap-2 font-bold hover:bg-blue-50 transition-colors uppercase"
+          >
+            <span className="text-lg">⊕</span> Tambah Indikator
+          </button>
+        </div>
+        
+        {/* KETERANGAN */}
+        <div className="text-center">
+             <label className="block text-sm font-bold text-gray-600 uppercase mb-3">KETERANGAN</label>
+             <textarea 
+                name="keterangan" 
+                value={formData.keterangan} 
+                onChange={handleChange} 
+                rows={3} 
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-base focus:ring-2 focus:ring-blue-500 outline-none"
+             />
         </div>
 
-        <div className="flex gap-2 mt-2">
-          <button type="button" onClick={onCancel} disabled={loading} className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 rounded font-bold transition disabled:opacity-50">Batal</button>
-          <button type="submit" disabled={loading} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded font-bold transition disabled:opacity-50">{loading ? "..." : "Simpan"}</button>
+        {/* TOMBOL AKSI */}
+        <div className="flex flex-col gap-3 mt-4 pt-4">
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-[#0095F6] hover:bg-blue-600 text-white py-3 rounded-lg font-bold flex items-center justify-center gap-2 transition disabled:opacity-50"
+          >
+            <Save size={18} />
+            {loading ? "Menyimpan..." : "Simpan"}
+          </button>
+
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={loading}
+            className="w-full bg-[#D32F2F] hover:bg-red-700 text-white py-3 rounded-lg font-bold flex items-center justify-center gap-2 transition disabled:opacity-50"
+          >
+            <CircleX size={18} />
+            Batal
+          </button>
         </div>
       </form>
     </div>

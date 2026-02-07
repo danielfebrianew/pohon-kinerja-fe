@@ -23,8 +23,8 @@ const getHeaderStyle = (jenisPohon: string) => {
     case "TACTICAL_PEMDA": return "border-blue-500 text-white bg-gradient-to-r from-[#3673CA] from-40% to-[#08D2FB]";
     case "OPERATIONAL_PEMDA": return "border-green-500 text-white bg-gradient-to-r from-[#139052] from-40% to-[#2DCB06]";
     case "TEMATIK":
-    case "SUB_TEMATIK":
-    case "SUB_SUB_TEMATIK":
+    // case "SUB_TEMATIK":
+    // case "SUB_SUB_TEMATIK":
     case "SUPER_SUB_TEMATIK": return "border-black bg-white text-black";
     default: return "border-gray-300 bg-white text-gray-800";
   }
@@ -193,7 +193,7 @@ const PohonNodeOpd: React.FC<PohonNodeOpdProps> = ({ node, onTreeRefresh, onDele
               </div>
 
               <div className="flex gap-3 justify-evenly my-4 hide-on-capture text-xs">
-  {childInfo && (
+  {/* {childInfo && (
     <button
       onClick={() => {
         setForcedChild(null); // default flow
@@ -204,7 +204,7 @@ const PohonNodeOpd: React.FC<PohonNodeOpdProps> = ({ node, onTreeRefresh, onDele
       <IconAdd />
       {childInfo.label}
     </button>
-  )}
+  )} */}
 
 {node.levelPohon < STRATEGIC_LEVEL && (
   <button
@@ -255,7 +255,7 @@ const PohonNodeOpd: React.FC<PohonNodeOpdProps> = ({ node, onTreeRefresh, onDele
             />
           ))}
 
-          {/* 2. Render Form Tambah */}
+          {/* 2. Render Form Tambah
           {isAddModalOpen && (forcedChild || childInfo) && (
             <li>
               <div className="tf-nc" style={{ padding: 0, border: 'none', background: 'transparent' }}>
@@ -277,8 +277,8 @@ const PohonNodeOpd: React.FC<PohonNodeOpdProps> = ({ node, onTreeRefresh, onDele
 />
 
               </div>
-            </li>
-          )}
+            </li> */}
+          {/* )} */}
         </ul>
       )}
     </li>
